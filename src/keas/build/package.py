@@ -101,9 +101,17 @@ class PackageBuilder(object):
             req.add_header("Authorization", "Basic %s" % base64string)
 
         soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
-        versions = [tag.contents[0][len(self.pkg)+1:-7]
-                    for tag in soup('a')
-                    if tag.contents[0].startswith(self.pkg)]
+        #TODO: handle real pypi index page!
+
+        VERSION = re.compile(self.pkg+r'-(\d\.\d(\.\d)?)')
+
+        versions = []
+        for tag in soup('a'):
+            cntnt = tag.contents[0]
+            m = VERSION.search(cntnt)
+            if m:
+                versions.append(m.group(1))
+
         logger.debug('All versions: ' + ' '.join(versions))
 
         # filter versions by ones that came from the branch we are building from.
@@ -125,17 +133,21 @@ class PackageBuilder(object):
             url = urllib.basejoin(url, self.customPath.split('%s')[0])
         url += 'branches'
         logger.debug('Branches URL: ' + url)
-        req = urllib2.Request(url)
 
-        if self.svnRepositoryUsername:
-            base64string = base64.encodestring('%s:%s' % (
-                self.svnRepositoryUsername, self.svnRepositoryPassword))[:-1]
-            req.add_header("Authorization", "Basic %s" % base64string)
+        xml = base.do('svn ls --xml ' + url)
+        elem = lxml.etree.fromstring(xml)
 
-        soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
-        branches  = [tag.contents[0][:-1]
-                     for tag in soup('ul')[0]('a')
-                     if tag.contents[0] != '..']
+        branches = [elem.text for elem in elem.findall('./list/entry/name')]
+
+        #if self.svnRepositoryUsername:
+        #    base64string = base64.encodestring('%s:%s' % (
+        #        self.svnRepositoryUsername, self.svnRepositoryPassword))[:-1]
+        #    req.add_header("Authorization", "Basic %s" % base64string)
+        #
+        #soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
+        #branches  = [tag.contents[0][:-1]
+        #             for tag in soup('ul')[0]('a')
+        #             if tag.contents[0] != '..']
         logger.debug('Branches: ' + ' '.join(branches))
         return branches
 
@@ -182,18 +194,24 @@ class PackageBuilder(object):
         file(os.path.join(tagDir, 'setup.py'), 'w').write(setuppy)
         # 3.3. Check it all in
         base.do('svn ci -m "Prepare for release." %s' %(tagDir))
-        # 3.4. Create distribution
-        base.do('cd %s && python setup.py sdist' %(tagDir))
 
         # 4. Upload the distribution
-        distributionFileName = os.path.join(
-            tagDir, 'dist', '%s-%s.tar.gz' %(self.pkg, version))
-        if not self.options.noUpload:
-            base.uploadFile(
-                distributionFileName,
-                self.packageIndexUrl,
-                self.packageIndexUsername, self.packageIndexPassword,
-                self.options.offline)
+        if self.uploadType == 'internal':
+            # 3.4. Create distribution
+            base.do('cd %s && python setup.py sdist' %(tagDir))
+
+            # TODO: windoze creates .zip!
+            distributionFileName = os.path.join(
+                tagDir, 'dist', '%s-%s.tar.gz' %(self.pkg, version))
+            if not self.options.noUpload:
+                base.uploadFile(
+                    distributionFileName,
+                    self.packageIndexUrl,
+                    self.packageIndexUsername, self.packageIndexPassword,
+                    self.options.offline)
+        elif self.uploadType == 'setup.py':
+            # 3.4. Create distribution and upload in one step
+            base.do('cd %s && python setup.py sdist register upload' %(tagDir))
 
         # 5. Update the start branch to the next devel version
         if not self.options.noBranchUpdate:
@@ -235,6 +253,13 @@ class PackageBuilder(object):
             base.BUILD_SECTION, 'svn-repos-username')
         self.svnRepositoryPassword = config.get(
             base.BUILD_SECTION, 'svn-repos-password')
+
+        try:
+            self.uploadType = config.get(
+                base.BUILD_SECTION, 'upload-type')
+        except ConfigParser.NoOptionError:
+            self.uploadType = 'internal'
+
         # 1.3. Determine the possibly custom path.
         for pkg in config.get(base.BUILD_SECTION, 'packages').split():
             if pkg.startswith(self.pkg):
