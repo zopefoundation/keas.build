@@ -1,0 +1,15 @@
+=======
+CHANGES
+=======
+
+0.1.1
+-----
+
+- Bug Fix: If a proejct variant is specified for which no release have
+  been made, the build script now exits nicely with a human readable
+  error message.
+
+0.1.0
+-----
+
+- Initial release.
