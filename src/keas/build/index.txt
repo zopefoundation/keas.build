@@ -1,0 +1,413 @@
+==========
+keas.build
+==========
+Manage large multi-package projects with ease
+=============================================
+
+``keas.build`` is a command line tool for quickly creating new
+eggs and buildout configurations for an application that has multiple
+interdependant packages.  As an example, consider a web application
+that helps you manage your twitter followers, called Twollo (short
+for twitter followers), you may have several different python packages
+which handle different aspects of your application:
+
+- ``twollo.integration`` - a package for managing integration with
+  twitter
+
+- ``twollo.web`` - a web front end for the ``twollo.integration``
+  package
+
+- ``twollo.rest`` - a rest API for working with
+  ``twollo.integration``
+
+- ``twollo.utils`` - a package filled with random utilities and
+  stuff.
+
+Using ``keas.build`` you will be able to manage the lifecycle of these
+python packages and any number of deployment configurations
+coherently.  Specifically, ``keas.build`` will:
+
+- Allow you to define a Project, which is a collection of
+  interdependent eggs that generally get released together.
+
+- Automatically create new egg releases of each package when necessary.
+
+- Upload new eggs to a private egg repository.
+
+- Generate versioned buildout configuration files that combine the
+  eggs properly.
+
+- Upload the buildout configuration files to a private configuration server.
+
+Installation
+============
+
+Installing a released version of keas.build
+-------------------------------------------
+
+You can use ``easy_install`` to get the latest release::
+
+  $ easy_install keas.build
+
+Installing a developer version of keas.build
+--------------------------------------------
+
+Checkout the code::
+
+  $ svn checkout svn://svn.zope.org/repos/main/keas.build/trunk keas.build
+  $ cd keas.build
+
+Run the bootstrap script and buildout::
+
+  $ python bootstrap.py
+  $ ./bin/buildout
+
+Running the ``build-package`` script
+------------------------------------
+
+Once installation is complete, you should be able to run the
+``build-package`` script. (Found in *./bin/build-package* with developer
+installations)::
+
+  $ build-package
+  Usage: build-package [options]
+
+  Options:
+    -h, --help            show this help message and exit
+    -c FILE, --config-file=FILE
+                          The file containing the configuration of the project.
+    -q, --quiet           When specified, no messages are displayed.
+    -v, --verbose         When specified, debug information is created.
+    -d, --use-defaults    When specified, no user input is required and the defaults are used.
+    -o, --offline-mode    When set, no server commands are executed.
+    -n, --next-version    When set, the system guesses the next version to generate.
+    -b BRANCH, --use-branch=BRANCH
+                          When specified, this branch will be always used.
+    --no-upload           When set, the generated configuration files are not uploaded.
+    --no-branch-update    When set, the branch is not updated with a new version after a release is created.
+
+Getting Started
+===============
+
+Assumptions
+-----------
+
+First we need to start with some assumptions that keas.build has about
+the way packages are laid out. When developing multiple packages in
+tandem, it often makes sense to have your subversion repository laid
+out like so::
+
+  SVNROOT/packages/
+      branches/
+          Twollo-0.x/
+              ...
+          Twollo-1.x/
+              twollo.integration/
+              twollo.rest/
+              twollo.utils/
+              twollo.web/
+      tags/
+          twollo.integration-1.2/
+          twollo.integration-1.3/
+          twollo.web-1.7/
+          twollo.web-1.8/
+          twollo.web-1.9/
+          ...
+      trunk/
+          twollo.integration/
+          twollo.rest/
+          twollo.utils/
+          twollo.web/
+
+The important thing to note is that each package does *not* have its
+own branches/ tags/ trunk/ directories, but rather there is just one
+set of the entire "project."
+
+Defining a Project configuration file
+--------------------------------------
+
+Before you can really do anything with the ``build-package`` script,
+you have to define a configuration file. Project configuration files
+use the INI [#ini]_ file format.  Every project configuration file
+must have a ``[build]`` section.  The project configuration file for
+the Twollo would look something like this::
+
+
+  # Twollo.cfg
+
+  [build]
+  name = Twollo  #this has nothing to do with the twollo package namespace
+  version = +
+  template = Twollo-Release-Template.cfg
+  package-index = https://build.twollo.com/eggs/
+  package-index-username = someuser
+  package-index-password = somepass
+  buildout-server = https://build.twollo.com/buildouts/
+  buildout-server-username = someuser
+  buildout-server-password = somepass
+  svn-repos = https://svn.twollo.com/svn/packages/
+  svn-repos-username = somesvnuser
+  svn-repos-password = somepass
+  packages = twollo.integration
+             twollo.web
+             twollo.rest
+             twollo.utils
+
+Let's go over each of the settings in the ``build`` section of
+*Twollo.cfg*.
+
+- **name** - This is the name of the project. It can be anything you
+  want and has nothing to do with the packages that make up the
+  project.  The name will be part of the generation buildout
+  configuration files.
+
+- **version** - This is the version to use when making a new release
+  of the Project.  The version number becomes part of the filename for
+  the generated buildout configuration files.
+
+  - Using **+** as the version will simply increment the version
+    number of the project from the versions that have already been
+    released.
+
+- **template** - This is a base buildout configuration file to use for
+  all deployments.  When a new Project release is created, the
+  ``[versions]`` section will automatically be updated with the
+  correct versions of each of the ``twollow.*`` packages.  More on
+  this later.
+
+- **package-index** - The url to a WebDAV [#webdav]_ enabled web
+  server where generated eggs for each of the ``twollow.*`` packages
+  should be uploaded.
+
+- **package-index-username** - The username for accessing the WebDAV
+  server
+
+- **package-index-password** - The password for accessing the WebDAV
+  server
+
+- **buildout-server** - The url to a WebDAV enabled web
+  server where generated buildout files should be uploaded.
+
+- **buildout-server-username** - The username for accessing the WebDAV
+  server
+
+- **buildout-server-password** - The password for accessing the WebDAV
+  server
+
+- **svn-repos** - The url for the subversion repository where all the
+  source code lives, including release tags.
+
+- **svn-repos-username** - The username for the url repository.
+
+- **svn-repos-password** - The password for the url repository.
+
+- **packages** - a list of packages that are part of the project.
+  These are the packages that live in the svn repository and that
+  should be released in conjunction with each other.
+
+Defining a Release Template
+---------------------------
+
+As we saw in the previous section, *Twollo.cfg* refers to a file
+called *Twollo-Release-Template.cfg*.  This is just a base buildout
+configuration.  For the Twollo project, it might look like this::
+
+  # Twollo-Release-Template.cfg
+
+  [buildout]
+  extends = http://download.zope.org/zope3.4/3.4.0/versions.cfg
+  parts = test
+  find-links = https://build.twollo.com/eggs/
+
+  [test]
+  recipe = zc.recipe.testrunner
+  eggs = twollo.web
+         twollo.integration
+         twollo.utils
+         twollo.rest
+
+  [twollo-app]
+  recipe = zc.zope3recipes:app
+  servers = zserver
+  site.zcml = <include package="twollo.web" file="app.zcml" />
+  eggs = twollo.web
+
+  [zope3]
+  location =
+
+When a new release of the Twollo project is made, a ``[versions]``
+section will be added to this configuration file with all the
+correct ``twollow.*`` versions pinned down.
+
+Defining Multiple Deployment Configurations
+-------------------------------------------
+
+Each time you release a Project, you may want to generate different
+buildout configuration files for all the different deployment
+environments you might have.  For example, you may have three
+different environments: Development, QA, and Production. These are
+called variants.  Each environment may need to have the application
+run on different ports, at different log levels, or have other small
+differences.
+
+We can easily generate additional configuration variants by adding
+addtional sections to the *Twollo.cfg* file::
+
+  # Twollo.cfg
+
+  [Development]
+  template = Twollo-Instance-Template.cfg
+  port = 9080
+  logdir = /opt/twollo/dev/logs
+  install-dir = /opt/twollo/dev
+  loglevel = debug
+  cache-size = 1000
+
+  [QA]
+  template = Twollo-Instance-Template.cfg
+  port = 9082
+  logdir = /opt/twollo/qa/logs
+  install-dir = /opt/twollo/qa
+  loglevel = info
+  cache-size = 1000
+
+  [Production]
+  template = Twollo-Instance-Template.cfg
+  port = 8080
+  logdir = /var/log/twollo
+  install-dir = /opt/twollo/
+  loglevel = warn
+  cache-size = 200000
+
+We can then have a single *Twollo-Instance-Template.cfg* file that
+uses python's built in string templating to access the variables we
+set in *Twollo.cfg*.  For the Twollo project, it might look like this::
+
+  # Twollo-Instance-Template.cfg
+
+  [buildout]
+  parts += twollo
+  directory = %(install-dir)s
+
+  [database]
+  recipe = zc.recipe.filestorage
+
+  [twollo]
+  recipe = zc.zope3recipes:instance
+  application = twollo-app
+  zope.conf =
+
+    <zodb>
+      cache-size %(cache-size)s
+      <filestorage>
+        path ${database:path}
+      </filestorage>
+    </zodb>
+
+    <server>
+      type WSGI-HTTP
+      address %(port)s
+    </server>
+
+    <eventlog>
+      level %(loglevel)s
+      <logfile>
+        formatter zope.exceptions.log.Formatter
+        path %(logdir)s/twollo.log
+      </logfile>
+    </eventlog>
+
+    <accesslog>
+      <logfile>
+        level info
+        path %(logdir)s/twollo-access.log
+      </logfile>
+    </accesslog>
+
+Releasing a Project
+-------------------
+
+Once you have created all the necessary configuration files, you can
+make your first project release.  This is where the ``build-package``
+script comes in to play.  The first time you run the ``build-package``
+script, the only option you need to pass in will be the configuration
+file.
+
+The ``build-package`` script will prompt you for version information
+about each of the packages it will be releasing as part of the
+Twollo.cfg project.  Your first interaction with the script might look
+like this::
+
+  $ build-package -c Twollo.cfg --quiet
+  Version for `twollo.integration` : 1.0.0
+  The release twollo.integration-1.0.0 does not exist.
+  Do you want to create it? yes/no [yes]: yes
+  Version for `twollo.rest` : 1.0.0
+  The release twollo.rest-1.0.0 does not exist.
+  Do you want to create it? yes/no [yes]: yes
+  Version for `twollo.utils` : 1.0.0
+  The release twollo.utils-1.0.0 does not exist.
+  Do you want to create it? yes/no [yes]: yes
+  Version for `twollo.web` : 1.0.0
+  The release twollo.web-1.0.0 does not exist.
+  Do you want to create it? yes/no [yes]: yes
+
+The next time you make a release, you can set the ``-n`` flag for
+``build-package`` to automatically guess the next version that should
+be released.  It does this by first looking for all the release tags
+of a given package and finding the last changed revision for the trunk
+of a given package.  If any code for the given package was changed
+since the last time it was released, it will bump the most minor
+version number automatically.  If no change has occured, it will
+choose the latest existing release.
+
+You can also use the ``-d`` flag to make ``build-package`` not prompt
+you before creating a new release.
+
+If you need to make a new release from a particular branch, you can
+use the ``-b`` option.  For example, if bug fixes have been made to the
+Twollo-1.x branch, we can create a new release using code from this
+branch like this::
+
+  $ build-package -c Twollo.cfg -nb Twollo-1.x
+
+When the new package versions are calculated, they will be versioned
+along the 1.x line, even if you have since created 2.x releases, by
+analyzing the name of the branch.
+
+Installing a Released Project
+-----------------------------
+
+``keas.build`` also comes with a very simple installation script that
+can be used to quickly install any variant of the released project::
+
+  $ install --help
+  Usage: install [options]
+
+  Options:
+    -h, --help            show this help message and exit
+    -u URL, --url=URL     The base URL at which the releases can be found.
+    -p PROJECT, --project=PROJECT
+                          The name of the project to be installed.
+    -V VARIANT, --variant=VARIANT
+                          The variant of the project to be installed.
+    -v VERSION, --version=VERSION
+                          The version of the project to be installed.
+    -l, --latest          When specified, the latest version will be chosen.
+    --username=USER       The username needed to access the site.
+    --password=PASSWORD   The password needed to access the site.
+    -b PATH, --buildout-path=PATH
+                          The path to the buildout executable.
+    --quiet               When specified, no messages are displayed.
+    --verbose             When specified, debug information is created.
+
+For example, to install the latest QA version of the ``Twollo`` project,
+you would run:
+
+  $ install -u https://build.twollo.com/buildouts/ -p Twollo -V QA --latest
+
+Footnotes
+=========
+
+.. [#ini] See http://en.wikipedia.org/wiki/INI_file
+.. [#webdav] See http://en.wikipedia.org/wiki/WebDAV
