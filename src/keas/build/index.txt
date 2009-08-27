@@ -406,6 +406,38 @@ you would run:
 
   $ install -u https://build.twollo.com/buildouts/ -p Twollo -V QA --latest
 
+Creating Helper Scripts
+-----------------------
+
+Sometimes it can be a pain to remember what all the command line
+options are that you need to pass for building your project.
+Fortunately, it is really easy to create helper scripts that just set
+some defaults for you.
+
+For example, to create a build-twollo script, you would add the
+following to a buildout configuration file::
+
+  [build-twollo]
+  recipe = zc.recipe.egg
+  eggs = keas.build
+  scripts = build=build-twollo
+  initialization =
+      sys.argv[1:1] = ['-c', 'Twollo.cfg']
+
+As another example, you could create an install-twollo-dev script that
+automatically installs the latest development release::
+
+  [install-twollo-dev]
+  recipe = zc.recipe.egg
+  eggs = keas.build
+  scripts = install=install-twollo-dev
+  initialization =
+      sys.argv[1:1] = ['-u', 'http://build.twollo.com/buildouts/',
+                       ' --username', 'someuser', '--password', 'somepass',
+                       '-p', 'Twollo', '-V', 'Development', '--latest']
+
+The possibilities are endless!
+
 Footnotes
 =========
 
