@@ -238,15 +238,19 @@ class PackageBuilder(object):
             base.do('svn co %s %s' %(branchUrl, branchDir))
             # 5.2. Get the current version.
             setuppy = file(os.path.join(branchDir, 'setup.py'), 'r').read()
-            currVersion = re.search("version ?= ?'(.*)',", setuppy).groups()[0]
-            # 5.3. Update setup/py to the next version of the currently
-            #      released one
-            newVersion = base.guessNextVersion(version) + 'dev'
-            setuppy = re.sub(
-                "version ?= ?'(.*)',", "version = '%s'," %newVersion, setuppy)
-            file(os.path.join(branchDir, 'setup.py'), 'w').write(setuppy)
-            # 5.4. Check in the changes.
-            base.do('svn ci -m "Update version number." %s' %(branchDir))
+            currVersion = re.search("version ?= ?'(.*)',", setuppy)
+            if not currVersion:
+                logger.error("No version =  found in setup.py, cannot update!")
+            else:
+                currVersion = currVersion.groups()[0]
+                # 5.3. Update setup/py to the next version of the currently
+                #      released one
+                newVersion = base.guessNextVersion(version) + 'dev'
+                setuppy = re.sub(
+                    "version ?= ?'(.*)',", "version = '%s'," %newVersion, setuppy)
+                file(os.path.join(branchDir, 'setup.py'), 'w').write(setuppy)
+                # 5.4. Check in the changes.
+                base.do('svn ci -m "Update version number." %s' %(branchDir))
 
         # 6. Cleanup
         shutil.rmtree(buildDir)
