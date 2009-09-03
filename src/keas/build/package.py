@@ -193,8 +193,7 @@ class PackageBuilder(object):
         # 2. Download tag
         buildDir = tempfile.mkdtemp()
         tagDir = os.path.join(buildDir, '%s-%s' %(self.pkg, version))
-        # depth = don't get the whole tree, but works only with svn 1.5+
-        base.do('svn co --depth=files %s %s' %(tagUrl, tagDir))
+        base.do('svn co %s %s' %(tagUrl, tagDir))
 
         # 3. Create release
         # 3.1. Remove setup.cfg
