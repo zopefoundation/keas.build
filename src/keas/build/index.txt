@@ -175,9 +175,18 @@ Let's go over each of the settings in the ``build`` section of
   correct versions of each of the ``twollow.*`` packages.  More on
   this later.
 
+- **upload-type** - Choose from ``internal`` or ``setup.py``
+
+  - **internal** Upload packages to a WebDAV enabled web server using the
+    below credetials. This is the default setting.
+    (actually does a ``python setup.py sdist`` and uploads the result)
+
+  - **setup.py** Executes ``python setup.py sdist register upload``,
+    does nothing else as this command should take care of the upload.
+
 - **package-index** - The url to a WebDAV [#webdav]_ enabled web
   server where generated eggs for each of the ``twollow.*`` packages
-  should be uploaded.
+  should be uploaded. Used only if ``upload-type`` is ``internal``.
 
 - **package-index-username** - The username for accessing the WebDAV
   server
