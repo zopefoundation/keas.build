@@ -34,6 +34,8 @@ from keas.build import base
 
 logger = base.logger
 
+is_win32 = sys.platform == 'win32'
+
 class PackageBuilder(object):
 
     pkg = None
@@ -200,9 +202,12 @@ class PackageBuilder(object):
             # 3.4. Create distribution
             base.do('cd %s && python setup.py sdist' %(tagDir))
 
-            # TODO: windoze creates .zip!
+            if is_win32:
+                ext = 'zip'
+            else:
+                ext = 'tar.gz'
             distributionFileName = os.path.join(
-                tagDir, 'dist', '%s-%s.tar.gz' %(self.pkg, version))
+                tagDir, 'dist', '%s-%s.%s' %(self.pkg, version, ext))
             if not self.options.noUpload:
                 base.uploadFile(
                     distributionFileName,
