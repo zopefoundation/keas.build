@@ -175,6 +175,13 @@ Let's go over each of the settings in the ``build`` section of
   correct versions of each of the ``twollow.*`` packages.  More on
   this later.
 
+- **tag-layout** - Choose from ``flat`` or ``subfolder``
+
+  - **flat** Tags will be created in svn as /tags/package-version
+    This is the default setting.
+
+  - **subfolder** Tags will be created in svn as /tags/package/version
+
 - **upload-type** - Choose from ``internal`` or ``setup.py``
 
   - **internal** Upload packages to a WebDAV enabled web server using the
@@ -186,7 +193,8 @@ Let's go over each of the settings in the ``build`` section of
 
 - **package-index** - The url to a WebDAV [#webdav]_ enabled web
   server where generated eggs for each of the ``twollow.*`` packages
-  should be uploaded. Used only if ``upload-type`` is ``internal``.
+  should be uploaded. Used for upload only if ``upload-type`` is ``internal``.
+  Also used to check/get existing versions of packages.
 
 - **package-index-username** - The username for accessing the WebDAV
   server
@@ -196,6 +204,7 @@ Let's go over each of the settings in the ``build`` section of
 
 - **buildout-server** - The url to a WebDAV enabled web
   server where generated buildout files should be uploaded.
+  If not given, the process stops after releasing the packages.
 
 - **buildout-server-username** - The username for accessing the WebDAV
   server

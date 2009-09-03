@@ -42,6 +42,7 @@ class PackageBuilder(object):
     customPath = None
     options = None
 
+    uploadType = 'internal'
     packageIndexUrl = None
     packageIndexUsername = None
     packageIndexPassword = None
@@ -50,17 +51,25 @@ class PackageBuilder(object):
     svnRepositoryUsername = None
     svnRepositoryPassword = None
 
+    tagLayout = 'flat'
+
     def __init__(self, pkg, options):
         self.pkg = pkg
         self.options = options
 
     def getTagURL(self, version):
         reposUrl = self.svnRepositoryUrl
+        separator = '-'
+        if self.tagLayout == 'flat':
+            separator = '-'
+        elif self.tagLayout == 'subfolder':
+            separator = '/'
         if self.customPath:
             reposUrl = urllib.basejoin(reposUrl, self.customPath)
-            tagUrl = reposUrl.split('%s')[0] + 'tags/%s-%s' %(self.pkg, version)
+            tagUrl = reposUrl.split('%s')[0] + 'tags/%s%s%s' %(
+                self.pkg, separator, version)
         else:
-            tagUrl = reposUrl + 'tags/%s-%s' %(self.pkg, version)
+            tagUrl = reposUrl + 'tags/%s%s%s' %(self.pkg, separator, version)
         logger.debug('Tag URL: ' + tagUrl)
         return tagUrl
 
@@ -104,6 +113,7 @@ class PackageBuilder(object):
 
         soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
         #TODO: handle real pypi index page!
+        #right now this supports only a flat list of all packages
 
         VERSION = re.compile(self.pkg+r'-(\d\.\d(\.\d)?)')
 
@@ -177,12 +187,14 @@ class PackageBuilder(object):
         branchUrl = self.getBranchURL(branch)
         tagUrl = self.getTagURL(version)
 
+        #TODO: destination folder might not exist... create it
         base.do('svn cp -m "Create release tag" %s %s' %(branchUrl, tagUrl))
 
         # 2. Download tag
         buildDir = tempfile.mkdtemp()
         tagDir = os.path.join(buildDir, '%s-%s' %(self.pkg, version))
-        base.do('svn co %s %s' %(tagUrl, tagDir))
+        # depth = don't get the whole tree, but works only with svn 1.5+
+        base.do('svn co --depth=files %s %s' %(tagUrl, tagDir))
 
         # 3. Create release
         # 3.1. Remove setup.cfg
@@ -217,6 +229,8 @@ class PackageBuilder(object):
         elif self.uploadType == 'setup.py':
             # 3.4. Create distribution and upload in one step
             base.do('cd %s && python setup.py sdist register upload' %(tagDir))
+        else:
+            logger.warn('Unknown uploadType: ' + self.uploadType)
 
         # 5. Update the start branch to the next devel version
         if not self.options.noBranchUpdate:
@@ -264,6 +278,12 @@ class PackageBuilder(object):
                 base.BUILD_SECTION, 'upload-type')
         except ConfigParser.NoOptionError:
             self.uploadType = 'internal'
+
+        try:
+            self.tagLayout = config.get(
+                base.BUILD_SECTION, 'tag-layout')
+        except ConfigParser.NoOptionError:
+            self.tagLayout = 'flat'
 
         # 1.3. Determine the possibly custom path.
         for pkg in config.get(base.BUILD_SECTION, 'packages').split():

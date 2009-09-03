@@ -79,6 +79,13 @@ def build(configFile, options):
         version = builder.runCLI(configFile, True)
         projectParser.set('versions', pkg, version)
 
+    # Stop if no buildout-server given
+    try:
+        config.get(base.BUILD_SECTION, 'buildout-server')
+    except ConfigParser.NoOptionError:
+        logger.info('No buildout-server, stopping')
+        return
+
     # Write the new configuration file to disk
     projectName = config.get(base.BUILD_SECTION, 'name')
     defaultVersion = configVersion = config.get(base.BUILD_SECTION, 'version')
