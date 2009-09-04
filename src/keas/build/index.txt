@@ -393,6 +393,15 @@ When the new package versions are calculated, they will be versioned
 along the 1.x line, even if you have since created 2.x releases, by
 analyzing the name of the branch.
 
+Caveat when using ``-n`` and ``-d`` on a branch with a branchname ending
+with the version number is that you'll need to have the package versions
+matching the branch version.
+E.g. having a branch: ``branches/twollo-1.9`` will suppose packages like
+``twollow.web-1.9.x`` and ``twollow.utils-1.9.x`` and so on.
+You should be aware of this also when releasing packages from the trunk.
+Most probably you'll drive development on the trunk and branch out for a
+stable. In this case package versions on the branch should be kept inline.
+
 Installing a Released Project
 -----------------------------
 
