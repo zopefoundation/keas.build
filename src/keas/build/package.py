@@ -27,6 +27,7 @@ import pkg_resources
 import re
 import shutil
 import sys
+import stat
 import tempfile
 import urllib
 import urllib2
@@ -35,6 +36,21 @@ from keas.build import base
 logger = base.logger
 
 is_win32 = sys.platform == 'win32'
+
+def checkRO(function, path, excinfo):
+    if (function == os.remove
+        and excinfo[0] == WindowsError
+        and excinfo[1].winerror == 5):
+        #Access is denied
+        #because it's a readonly file
+        os.chmod(path, stat.S_IWRITE)
+        os.remove(path)
+
+def rmtree(dirname):
+    if is_win32:
+        shutil.rmtree(dirname, ignore_errors=False, onerror=checkRO)
+    else:
+        shutil.rmtree(dirname)
 
 class PackageBuilder(object):
 
@@ -253,7 +269,7 @@ class PackageBuilder(object):
                 base.do('svn ci -m "Update version number." %s' %(branchDir))
 
         # 6. Cleanup
-        shutil.rmtree(buildDir)
+        rmtree(buildDir)
 
     def runCLI(self, configFile, askToCreateRelease=False):
         logger.info('Start releasing new version of ' + self.pkg)
