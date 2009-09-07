@@ -71,19 +71,24 @@ def build(configFile, options):
         projectParser.add_section('versions')
 
     # Determine all versions of the important packages
+    pkgversions = {}
     for pkg in config.get(base.BUILD_SECTION, 'packages').split():
         customPath = None
         if ':' in pkg:
             pkg, customPath = pkg.split(':')
         builder = package.PackageBuilder(pkg, options)
         version = builder.runCLI(configFile, True)
+        pkgversions[pkg] = version
         projectParser.set('versions', pkg, version)
 
     # Stop if no buildout-server given
     try:
         config.get(base.BUILD_SECTION, 'buildout-server')
     except ConfigParser.NoOptionError:
-        logger.info('No buildout-server, stopping')
+        logger.info('No buildout-server specified in the cfg, STOPPING')
+        logger.info('Selected package versions:\n%s' % (
+            '\n'.join('%s = %s' % (pkg, version)
+                      for pkg, version in pkgversions.items())) )
         return
 
     # Write the new configuration file to disk
