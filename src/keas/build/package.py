@@ -211,7 +211,7 @@ class PackageBuilder(object):
         # 4. Upload the distribution
         if self.uploadType == 'internal':
             # 3.4. Create distribution
-            base.do('cd %s && python setup.py sdist' %(tagDir))
+            base.do('python setup.py sdist', cwd = tagDir)
 
             if is_win32:
                 ext = 'zip'
@@ -227,7 +227,7 @@ class PackageBuilder(object):
                     self.options.offline)
         elif self.uploadType == 'setup.py':
             # 3.4. Create distribution and upload in one step
-            base.do('cd %s && python setup.py sdist register upload' %(tagDir))
+            base.do('python setup.py sdist register upload', cwd = tagDir)
         else:
             logger.warn('Unknown uploadType: ' + self.uploadType)
 

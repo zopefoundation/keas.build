@@ -33,10 +33,11 @@ formatter = logging.Formatter('%(levelname)s - %(message)s')
 
 BUILD_SECTION = 'build'
 
-def do(cmd):
+def do(cmd, cwd = None):
     logger.debug('Command: ' + cmd)
     p = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        shell=True, cwd=cwd)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
         logger.error(u'An error occurred while running command: %s' %cmd)
