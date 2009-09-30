@@ -131,7 +131,7 @@ class PackageBuilder(object):
         #TODO: handle real pypi index page!
         #right now this supports only a flat list of all packages
 
-        VERSION = re.compile(self.pkg+r'-(\d\.\d(\.\d)?)')
+        VERSION = re.compile(self.pkg+r'-(\d+\.\d+(\.\d+){0,2})')
 
         versions = []
         for tag in soup('a'):
