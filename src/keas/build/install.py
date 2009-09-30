@@ -52,6 +52,8 @@ class Installer(object):
 
     def getVariants(self, project):
         logger.debug('Package Index: ' + self.options.url)
+        if not self.options.url.endswith('/'):
+            self.options.url += '/'
         req = urllib2.Request(self.options.url + project)
 
         if self.options.username:
@@ -115,6 +117,9 @@ class Installer(object):
             print 'Variants'
             for name in variants:
                 print '  * ' + name
+            if not variants:
+                logger.error("No variants found, this script only works with variants.")
+                sys.exit(0)
             variant = base.getInput('Variant', variants[0], False)
         # 3. Get the version of the project.
         version = self.options.version

@@ -203,6 +203,7 @@ class PackageBuilder(object):
         branchUrl = self.getBranchURL(branch)
         tagUrl = self.getTagURL(version)
 
+        logger.info('Creating release tag')
         #TODO: destination folder might not exist... create it
         base.do('svn cp -m "Create release tag" %s %s' %(branchUrl, tagUrl))
 
@@ -213,6 +214,7 @@ class PackageBuilder(object):
 
         # 3. Create release
         # 3.1. Remove setup.cfg
+        logger.info("Updating tag version metadata")
         setupCfgPath = os.path.join(tagDir, 'setup.cfg')
         if os.path.exists(setupCfgPath):
             os.remove(setupCfgPath)
@@ -227,6 +229,7 @@ class PackageBuilder(object):
         # 4. Upload the distribution
         if self.uploadType == 'internal':
             # 3.4. Create distribution
+            logger.info("Creating release tarball")
             base.do('python setup.py sdist', cwd = tagDir)
 
             if is_win32:
@@ -236,6 +239,7 @@ class PackageBuilder(object):
             distributionFileName = os.path.join(
                 tagDir, 'dist', '%s-%s.%s' %(self.pkg, version, ext))
             if not self.options.noUpload:
+                logger.info("Uploading release.")
                 base.uploadFile(
                     distributionFileName,
                     self.packageIndexUrl,
@@ -243,15 +247,17 @@ class PackageBuilder(object):
                     self.options.offline)
         elif self.uploadType == 'setup.py':
             # 3.4. Create distribution and upload in one step
+            logger.info("Uploading release to PyPI.")
             base.do('python setup.py sdist register upload', cwd = tagDir)
         else:
             logger.warn('Unknown uploadType: ' + self.uploadType)
 
         # 5. Update the start branch to the next devel version
         if not self.options.noBranchUpdate:
+            logger.info("Updating branch version metadata")
             # 5.1. Check out the branch.
             branchDir = os.path.join(buildDir, 'branch')
-            base.do('svn co %s %s' %(branchUrl, branchDir))
+            base.do('svn co --non-recursive %s %s' %(branchUrl, branchDir))
             # 5.2. Get the current version.
             setuppy = file(os.path.join(branchDir, 'setup.py'), 'r').read()
             currVersion = re.search("version ?= ?'(.*)',", setuppy)
