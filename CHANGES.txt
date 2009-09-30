@@ -1,15 +1,19 @@
-=======
 CHANGES
 =======
 
-0.1.1
------
+0.1.3 (2009-09-30)
+------------------
+
+- Initial public release.
+
+0.1.1 (internal)
+----------------
 
 - Bug Fix: If a proejct variant is specified for which no release have
   been made, the build script now exits nicely with a human readable
   error message.
 
-0.1.0
------
+0.1.0 (internal)
+----------------
 
 - Initial release.

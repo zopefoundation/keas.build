@@ -30,20 +30,20 @@ setup(
     long_description=(
         read('README.txt')
         + '\n\n' +
+        read('src','keas','build','index.txt')
+        + '\n\n' +
         read('CHANGES.txt')
         ),
     license = "ZPL 2.1",
     keywords = "zope3 release build",
     classifiers = [
         'Development Status :: 4 - Beta',
-        'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Zope Public License',
         'Programming Language :: Python',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Topic :: Internet :: WWW/HTTP',
-        'Framework :: Zope3'],
+        'Framework :: Buildout'],
     url = 'http://pypi.python.org/pypi/keas.build',
     packages = find_packages('src'),
     include_package_data = True,
