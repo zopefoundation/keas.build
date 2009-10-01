@@ -13,6 +13,11 @@ CHANGES
   branch just to update the setup.py file with the new version
   number.  Instead only the top level directory is checked out.
 
+- Bug Fix: project build script would crash when variant
+  configuration was missing information required by its template. Now
+  a helpful error message is printed and no files will be uploaded
+  until all have been created successfully.
+
 0.1.3 (2009-09-30)
 ------------------
 

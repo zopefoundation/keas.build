@@ -327,8 +327,11 @@ class PackageBuilder(object):
             # the last release.
             changed = False
             if self.options.branch:
+                logger.info('Checking for changes since version %s; please wait...', versions[-1])
                 changed = self.hasChangedSince(
                     versions[-1], self.options.branch)
+            if not changed:
+                logger.info("No changes detected.")
             # 3.2. If the branch changed and the next version should be
             # suggested, let's find the next version.
             if self.options.nextVersion and changed:

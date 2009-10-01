@@ -115,20 +115,28 @@ def build(configFile, options):
             config.get(base.BUILD_SECTION, 'buildout-server-password'),
             options.offline)
 
+    filesToUpload = []
+
     # Create deployment configurations
     for section in config.sections():
         if section == base.BUILD_SECTION:
             continue
-        logger.info('Building deployment configuration: ' + section)
-        logger.info('Loading deploy template file: ' +
-                    config.get(section, 'template'))
-        template = file(config.get(section, 'template'), 'r').read()
-        vars = dict([(name, value) for name, value in config.items(section)
+        logger.info('Building deployment configuration: %s', section)
+        template_path = config.get(section, 'template')
+        logger.info('Loading deploy template file: %s', template_path)
+        template = file(template_path, 'r').read()
+        vars = dict([(name, value)
+                     for name, value in config.items(section)
                      if name != 'template'])
         vars['project-name'] = projectName
         vars['project-version'] = projectVersion
         vars['instance-name'] = section
-        deployConfigText = template %vars
+        try:
+            deployConfigText = template % vars
+        except KeyError, e:
+            logger.error("The %s deployment configuration is missing the %r setting required by %s",
+                         section, e.message, template_path)
+            sys.exit(0)
         deployConfigFilename = '%s-%s-%s.cfg' %(
             config.get(base.BUILD_SECTION, 'name'), section, projectVersion)
         deployConfig = ConfigParser.RawConfigParser()
@@ -137,10 +145,13 @@ def build(configFile, options):
         logger.info('Writing deployment file: ' + deployConfigFilename)
         deployConfig.write(open(deployConfigFilename, 'w'))
 
-        # Upload the deployment file
-        if not options.offline and not options.noUpload:
+        filesToUpload.append(deployConfigFilename)
+
+    # Upload the deployment files
+    if not options.offline and not options.noUpload:
+        for filename in filesToUpload:
             base.uploadFile(
-                deployConfigFilename,
+                filename,
                 config.get(
                     base.BUILD_SECTION, 'buildout-server')+'/'+projectName,
                 config.get(base.BUILD_SECTION, 'buildout-server-username'),
