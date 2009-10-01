@@ -181,7 +181,11 @@ def main(args=None):
     if options.quiet:
         logger.setLevel(logging.FATAL)
 
-    build(options.configFile, options)
+    try:
+        build(options.configFile, options)
+    except KeyboardInterrupt:
+        logger.info("Quitting")
+        sys.exit(0)
 
     # Remove the handler again.
     logger.removeHandler(handler)

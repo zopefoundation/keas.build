@@ -398,7 +398,11 @@ def main(args=None):
         sys.exit(0)
     for pkg in args:
         builder = PackageBuilder(pkg, options)
-        builder.runCLI(options.configFile)
+        try:
+            builder.runCLI(options.configFile)
+        except KeyboardInterrupt:
+            logger.info("Quitting")
+            sys.exit(0)
 
     # Remove the handler again.
     logger.removeHandler(handler)

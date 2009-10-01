@@ -138,7 +138,7 @@ class Installer(object):
         # 4. Install the package
         base.do('%s -t 2 -%sc %s%s/%s-%s-%s.cfg' %(
             self.options.buildout,
-            "vvvvv" if self.options.verbose else "",
+            "vv" if self.options.verbose else "",
             self.options.url,
             project,
             project, variant, version))
@@ -216,7 +216,12 @@ def main(args=None):
         logger.setLevel(logging.FATAL)
 
     installer = Installer(options)
-    installer.runCLI()
+
+    try:
+        installer.runCLI()
+    except KeyboardInterrupt:
+        logger.info("Quitting")
+        sys.exit(0)
 
     # Remove the handler again.
     logger.removeHandler(handler)
