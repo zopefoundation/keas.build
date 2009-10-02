@@ -4,7 +4,8 @@ CHANGES
 0.1.5 (unreleased)
 ------------------
 
-- ...
+- Improvement: removed dependency on lxml.  Now we just use pythons
+  built-in xml library.
 
 0.1.4 (2009-10-01)
 ------------------

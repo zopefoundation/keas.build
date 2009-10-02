@@ -20,7 +20,6 @@ import BeautifulSoup
 import ConfigParser
 import base64
 import logging
-import lxml.etree
 import optparse
 import os
 import pkg_resources
@@ -31,6 +30,7 @@ import stat
 import tempfile
 import urllib
 import urllib2
+from xml.etree import ElementTree
 from keas.build import base
 
 logger = base.logger
@@ -105,8 +105,8 @@ class PackageBuilder(object):
 
     def getRevision(self, url):
         xml = base.do('svn info --xml ' + url)
-        elem = lxml.etree.fromstring(xml)
-        revision = elem.xpath('/info/entry/commit/@revision')
+        elem = ElementTree.fromstring(xml)
+        revision = elem.find("entry").find("commit").get("revision")
         if not revision:
             revision = 0
         else:
@@ -163,7 +163,7 @@ class PackageBuilder(object):
         logger.debug('Branches URL: ' + url)
 
         xml = base.do('svn ls --xml ' + url)
-        elem = lxml.etree.fromstring(xml)
+        elem = ElementTree.fromstring(xml)
 
         branches = [elem.text for elem in elem.findall('./list/entry/name')]
 
