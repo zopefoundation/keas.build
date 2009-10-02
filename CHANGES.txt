@@ -21,6 +21,9 @@ CHANGES
 - Bug Fix: Typing Ctrl+c on the command line no longer causes a
   KeyboardInterrupt traceback to be spit out.
 
+- Bug Fix: when running the installer, if the buildout command prompts
+  the user for input, the installer will no longer eat up the prompt.
+
 0.1.3 (2009-09-30)
 ------------------
 

@@ -137,11 +137,12 @@ class Installer(object):
                 version = base.getInput('Version', versions[-1], False)
         # 4. Install the package
         base.do('%s -t 2 -%sc %s%s/%s-%s-%s.cfg' %(
-            self.options.buildout,
-            "vv" if self.options.verbose else "",
-            self.options.url,
-            project,
-            project, variant, version))
+                self.options.buildout,
+                "vv" if self.options.verbose else "",
+                self.options.url,
+                project,
+                project, variant, version),
+                captureOutput=False)
 
 parser = optparse.OptionParser()
 parser.add_option(

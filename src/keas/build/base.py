@@ -33,10 +33,14 @@ formatter = logging.Formatter('%(levelname)s - %(message)s')
 
 BUILD_SECTION = 'build'
 
-def do(cmd, cwd = None):
+def do(cmd, cwd=None, captureOutput=True):
     logger.debug('Command: ' + cmd)
+    if captureOutput:
+        stdout = stderr = subprocess.PIPE
+    else:
+        stdout = stderr = None
     p = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        cmd, stdout=stdout, stderr=stderr,
         shell=True, cwd=cwd)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
