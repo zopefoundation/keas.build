@@ -43,11 +43,15 @@ def do(cmd, cwd=None, captureOutput=True):
         cmd, stdout=stdout, stderr=stderr,
         shell=True, cwd=cwd)
     stdout, stderr = p.communicate()
+    if stdout is None:
+        stdout = "See output above"
+    if stderr is None:
+        stderr = "See output above"
     if p.returncode != 0:
         logger.error(u'An error occurred while running command: %s' %cmd)
-        logger.error('Error Output: \n' + stderr)
+        logger.error('Error Output: \n%s' % stderr)
         sys.exit(p.returncode)
-    logger.debug('Output: \n' + stdout)
+    logger.debug('Output: \n%s' % stdout)
     return stdout
 
 def getInput(prompt, default, useDefaults):
