@@ -110,7 +110,7 @@ class PackageBuilder(object):
         if not revision:
             revision = 0
         else:
-            revision = int(revision[0])
+            revision = int(revision)
         logger.debug('Revision for %s: %i' %(url, revision))
         return revision
 
@@ -330,8 +330,10 @@ class PackageBuilder(object):
                 logger.info('Checking for changes since version %s; please wait...', versions[-1])
                 changed = self.hasChangedSince(
                     versions[-1], self.options.branch)
-            if not changed:
-                logger.info("No changes detected.")
+                if not changed:
+                    logger.info("No changes detected.")
+            else:
+                logger.info("Not checking for changes since version %s because no branch was specified.", versions[-1])
             # 3.2. If the branch changed and the next version should be
             # suggested, let's find the next version.
             if self.options.nextVersion and changed:
