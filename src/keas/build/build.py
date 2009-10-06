@@ -24,32 +24,52 @@ import logging
 import pkg_resources
 import re
 import sys
+import shutil
+import os
 import urllib2
 from keas.build import base, package
 
 logger = base.logger
 
-def findProjectVersions(project, config, options):
+def findProjectVersions(project, config, options, uploadType):
     if options.offline:
         logger.info('Offline: Skip looking for project versions.')
         return []
-    url = config.get(base.BUILD_SECTION, 'buildout-server') + project + '/'
-    logger.debug('Package Index: ' + url)
-    req = urllib2.Request(url)
 
-    username = config.get(base.BUILD_SECTION, 'buildout-server-username')
-    password = config.get(base.BUILD_SECTION, 'buildout-server-password')
-    base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
-    req.add_header("Authorization", "Basic %s" % base64string)
+    VERSION = re.compile(project+r'-(\d+\.\d+(\.\d+){0,2})')
 
-    try:
-        soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
-    except urllib2.HTTPError, err:
-        logger.error("There was an error accessing %s: %s" % (url, err))
-        return []
-    versions = [tag.contents[0][len(project)+1:-4]
-                for tag in soup('a')
-                if re.match(project+'-[0-9]', tag.contents[0])]
+    if uploadType == 'local':
+        dest = os.path.join(config.get(base.BUILD_SECTION, 'buildout-server'),
+                            project)
+
+        versions = []
+        for root, dirs, files in os.walk(dest):
+            for fname in files:
+                m = VERSION.search(fname)
+                if m:
+                    versions.append(m.group(1))
+    else:
+        url = config.get(base.BUILD_SECTION, 'buildout-server') + project + '/'
+        logger.debug('Package Index: ' + url)
+        req = urllib2.Request(url)
+
+        username = config.get(base.BUILD_SECTION, 'buildout-server-username')
+        password = config.get(base.BUILD_SECTION, 'buildout-server-password')
+        base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
+        req.add_header("Authorization", "Basic %s" % base64string)
+
+        try:
+            soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
+        except urllib2.HTTPError, err:
+            logger.error("There was an error accessing %s: %s" % (url, err))
+            return []
+
+        versions = []
+        for tag in soup('a'):
+            cntnt = tag.contents[0]
+            m = VERSION.search(cntnt)
+            if m:
+                versions.append(m.group(1))
 
     return sorted(versions, key=lambda x: pkg_resources.parse_version(x))
 
@@ -81,6 +101,11 @@ def build(configFile, options):
         pkgversions[pkg] = version
         projectParser.set('versions', pkg, version)
 
+    try:
+        uploadType = config.get(base.BUILD_SECTION, 'buildout-upload-type')
+    except ConfigParser.NoOptionError:
+        uploadType = "webdav"
+
     # Stop if no buildout-server given
     try:
         config.get(base.BUILD_SECTION, 'buildout-server')
@@ -94,7 +119,8 @@ def build(configFile, options):
     # Write the new configuration file to disk
     projectName = config.get(base.BUILD_SECTION, 'name')
     defaultVersion = configVersion = config.get(base.BUILD_SECTION, 'version')
-    projectVersions = findProjectVersions(projectName, config, options)
+    projectVersions = findProjectVersions(projectName, config,
+                                          options, uploadType)
     if projectVersions:
         defaultVersion = projectVersions[-1]
     if options.nextVersion or configVersion == '+':
@@ -106,16 +132,7 @@ def build(configFile, options):
     logger.info('Writing project configuration file: ' + projectConfigFilename)
     projectParser.write(open(projectConfigFilename, 'w'))
 
-    # Upload the release file
-    if not options.offline and not options.noUpload:
-        base.uploadFile(
-            projectConfigFilename,
-            config.get(base.BUILD_SECTION, 'buildout-server')+'/'+projectName,
-            config.get(base.BUILD_SECTION, 'buildout-server-username'),
-            config.get(base.BUILD_SECTION, 'buildout-server-password'),
-            options.offline)
-
-    filesToUpload = []
+    filesToUpload = [projectConfigFilename]
 
     # Create deployment configurations
     for section in config.sections():
@@ -131,6 +148,14 @@ def build(configFile, options):
         vars['project-name'] = projectName
         vars['project-version'] = projectVersion
         vars['instance-name'] = section
+
+        #handle multi-line items, ConfigParser removes leading spaces
+        #we need to add some back otherwise it will be a parsing error
+        for k, v in vars.items():
+            if '\n' in v:
+                #add a 2 space indent
+                vars[k] = v.replace('\n', '\n  ')
+
         try:
             deployConfigText = template % vars
         except KeyError, e:
@@ -148,15 +173,26 @@ def build(configFile, options):
         filesToUpload.append(deployConfigFilename)
 
     # Upload the deployment files
-    if not options.offline and not options.noUpload:
+    if uploadType == 'local':
+        #no upload, just copy to destination
+        dest = os.path.join(config.get(base.BUILD_SECTION, 'buildout-server'),
+                            projectName)
+        if not os.path.exists(dest):
+            os.makedirs(dest)
         for filename in filesToUpload:
-            base.uploadFile(
-                filename,
-                config.get(
-                    base.BUILD_SECTION, 'buildout-server')+'/'+projectName,
-                config.get(base.BUILD_SECTION, 'buildout-server-username'),
-                config.get(base.BUILD_SECTION, 'buildout-server-password'),
-                options.offline)
+            shutil.copyfile(filename, os.path.join(dest, filename))
+    elif uploadType == 'webdav':
+        if not options.offline and not options.noUpload:
+            for filename in filesToUpload:
+                base.uploadFile(
+                    filename,
+                    config.get(
+                        base.BUILD_SECTION, 'buildout-server')+'/'+projectName,
+                    config.get(base.BUILD_SECTION, 'buildout-server-username'),
+                    config.get(base.BUILD_SECTION, 'buildout-server-password'),
+                    options.offline)
+    elif uploadType == 'mypypi':
+        pass
 
 
 def main(args=None):

@@ -203,8 +203,23 @@ Let's go over each of the settings in the ``build`` section of
 - **package-index-password** - The password for accessing the WebDAV
   server
 
+- **buildout-upload-type** - Choose from ``webdav``, ``local`` or ``mypypi``
+
+  - **webdav** Upload generated buildout files to the url specified by
+    ``buildout-server`` with the WebDAV protocol.
+
+  - **local** Just generate buildout files, don't upload them.
+    If ``buildout-server`` is given buildout files will be copied to that
+    folder.
+
+  - **mypypi** Upload generated buildout files to the url specified by
+    ``buildout-server``. The url should point to the mypypi upload page.
+    (coming soon)
+
 - **buildout-server** - The url to a WebDAV enabled web
   server where generated buildout files should be uploaded.
+  If ``buildout-upload-type`` is ``local`` this is a path on the local
+  filesystem. Buildout files wil be copied to this folder.
   If not given, the process stops after releasing the packages.
 
 - **buildout-server-username** - The username for accessing the WebDAV

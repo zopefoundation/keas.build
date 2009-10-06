@@ -7,6 +7,11 @@ CHANGES
 - Improvement: removed dependency on lxml.  Now we just use pythons
   built-in xml library.
 
+- Improvement: added ``buildout-upload-type`` option.
+  See doc for further info
+
+- Bug Fix: multiline template option values crashed on parsing
+
 0.1.4 (2009-10-01)
 ------------------
 
@@ -38,7 +43,7 @@ CHANGES
 0.1.1 (internal)
 ----------------
 
-- Bug Fix: If a proejct variant is specified for which no release have
+- Bug Fix: If a project variant is specified for which no release have
   been made, the build script now exits nicely with a human readable
   error message.
 
