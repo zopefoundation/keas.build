@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.1.5 (unreleased)
+0.1.5 (2009-10-16)
 ------------------
 
 - Improvement: add username and password on install to the URL that buildout
