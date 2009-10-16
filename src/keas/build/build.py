@@ -66,7 +66,7 @@ def findProjectVersions(project, config, options, uploadType):
 
         versions = []
         for tag in soup('a'):
-            cntnt = tag.contents[0]
+            cntnt = str(tag.contents[0]) # str: re does not like non-strings
             m = VERSION.search(cntnt)
             if m:
                 versions.append(m.group(1))
@@ -192,7 +192,26 @@ def build(configFile, options):
                     config.get(base.BUILD_SECTION, 'buildout-server-password'),
                     options.offline)
     elif uploadType == 'mypypi':
-        pass
+        if not options.offline and not options.noUpload:
+            url = (config.get(base.BUILD_SECTION, 'buildout-server')+
+                   '/'+projectName+'/upload')
+            boundary = "--------------GHSKFJDLGDS7543FJKLFHRE75642756743254"
+            headers={"Content-Type":
+                "multipart/form-data; boundary=%s; charset=utf-8" % boundary}
+            for filename in filesToUpload:
+                #being lazy here with the construction of the multipart form data
+                content = """--%s
+Content-Disposition: form-data; name="content";filename="%s"
+
+%s
+--%s--
+""" % (boundary, filename, open(filename, 'r').read(), boundary)
+
+                base.uploadContent(
+                    content, filename, url,
+                    config.get(base.BUILD_SECTION, 'buildout-server-username'),
+                    config.get(base.BUILD_SECTION, 'buildout-server-password'),
+                    options.offline, method='POST', headers=headers)
 
 
 def main(args=None):

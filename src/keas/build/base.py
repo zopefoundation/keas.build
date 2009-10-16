@@ -1,16 +1,8 @@
-##############################################################################
+###############################################################################
 #
-# Copyright (c) 2008 Zope Foundation and Contributors.
-# All Rights Reserved.
+# Copyright 2008 by Keas, Inc., San Francisco, CA
 #
-# This software is subject to the provisions of the Zope Public License,
-# Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
-# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
-# WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
-# FOR A PARTICULAR PURPOSE.
-#
-##############################################################################
+###############################################################################
 """Build a release
 
 $Id$
@@ -65,11 +57,12 @@ def getInput(prompt, default, useDefaults):
         return default
     return value
 
-
-def uploadFile(path, url, username, password, offline):
-    filename = os.path.split(path)[-1]
+def uploadContent(content, filename, url, username, password,
+                  offline, method, headers=None):
     if offline:
         logger.info('Offline: File `%s` not uploaded.' %filename)
+        return
+
     logger.debug('Uploading `%s` to %s' %(filename, url))
     pieces = urlparse.urlparse(url)
     Connection = httplib.HTTPConnection
@@ -78,19 +71,33 @@ def uploadFile(path, url, username, password, offline):
 
     base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
 
+    if headers is None:
+        headers = {}
+
+    headers["Authorization"] = "Basic %s" % base64string
+
     conn = Connection(pieces[1])
     conn.request(
-        'PUT',
-        pieces[2]+'/'+filename,
-        open(path, 'r').read(),
-        {"Authorization": "Basic %s" % base64string})
+        method,
+        pieces[2],
+        content,
+        headers)
 
     response = conn.getresponse()
-    if response.status != 201:
+    if ((response.status != 201 and method == 'PUT')
+        or response.status != 200 and method == 'POST'):
         logger.error('Error uploading file. Code: %i (%s)' %(
             response.status, response.reason))
     else:
         logger.info('File uploaded: %s' %filename)
+
+def uploadFile(path, url, username, password, offline, method='PUT',
+               headers=None):
+    filename = os.path.split(path)[-1]
+
+    uploadContent(open(path, 'r').read(),
+                  filename, url+'/'+filename,
+                  username, password, offline, method, headers=headers)
 
 
 def guessNextVersion(version):

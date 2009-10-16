@@ -12,6 +12,14 @@ CHANGES
 
 - Bug Fix: multiline template option values crashed on parsing
 
+- Bug Fix: re did not like non-text parameters coming from BeautifulSoup
+
+- Improvement: added the ``--timeout`` option to install
+
+- Improvement: added mypypi buildout file upload support
+
+- Bug Fix: revert to checkout of the complete source tree
+
 0.1.4 (2009-10-01)
 ------------------
 

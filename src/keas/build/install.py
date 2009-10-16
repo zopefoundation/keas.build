@@ -90,6 +90,9 @@ class Installer(object):
         versions = []
         for tag in soup('a'):
             text = tag.contents[0]
+            if not text:
+                continue
+            text = str(text)
             if not text.startswith(project+'-'+variant):
                 continue
             version = text.split('-')[-1][:-4]
@@ -136,8 +139,9 @@ class Installer(object):
                     print '  * ' + name
                 version = base.getInput('Version', versions[-1], False)
         # 4. Install the package
-        base.do('%s -t 2 -%sc %s%s/%s-%s-%s.cfg' %(
+        base.do('%s -t %s -%sc %s%s/%s-%s-%s.cfg' %(
                 self.options.buildout,
+                self.options.timeout,
                 "vv" if self.options.verbose else "",
                 self.options.url,
                 project,
@@ -194,6 +198,12 @@ parser.add_option(
     "--verbose", action="store_true",
     dest="verbose", default=False,
     help="When specified, debug information is created.")
+
+parser.add_option(
+    "--timeout", action="store", type="int", default=2,
+    dest="timeout", metavar="TIMEOUT",
+    help="Socket timeout passed on to buildout.")
+
 
 def main(args=None):
     # Make sure we get the arguments.

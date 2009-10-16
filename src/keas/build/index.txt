@@ -214,7 +214,7 @@ Let's go over each of the settings in the ``build`` section of
 
   - **mypypi** Upload generated buildout files to the url specified by
     ``buildout-server``. The url should point to the mypypi upload page.
-    (coming soon)
+    (Something like http://yourhost/++projects++/)
 
 - **buildout-server** - The url to a WebDAV enabled web
   server where generated buildout files should be uploaded.

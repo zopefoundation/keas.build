@@ -135,7 +135,7 @@ class PackageBuilder(object):
 
         versions = []
         for tag in soup('a'):
-            cntnt = tag.contents[0]
+            cntnt = str(tag.contents[0]) # str: re does not like non-strings
             m = VERSION.search(cntnt)
             if m:
                 versions.append(m.group(1))
