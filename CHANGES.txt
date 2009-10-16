@@ -4,6 +4,9 @@ CHANGES
 0.1.5 (unreleased)
 ------------------
 
+- Improvement(?) or fix: remove twisted dependency that was used in deploy
+  for SSH
+
 - Improvement: removed dependency on lxml.  Now we just use pythons
   built-in xml library.
 

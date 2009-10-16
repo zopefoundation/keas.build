@@ -51,7 +51,6 @@ setup(
     namespace_packages = ['keas'],
     install_requires=[
         'BeautifulSoup',
-        'Twisted',
         'setuptools',
         ],
     zip_safe = False,
@@ -60,6 +59,5 @@ setup(
     build = keas.build.build:main
     build-package = keas.build.package:main
     install = keas.build.install:main
-    deploy = keas.build.deploy:main
     """,
     )

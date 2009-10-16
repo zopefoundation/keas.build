@@ -15,13 +15,23 @@
 
 $Id$
 """
+
+#
+# WARNING
+# this was never working completely
+#
+# Stephan says: it should be moved to use command-line SSH
+# AdamG says: twisted was a pain on windows
+#             keeping it around to have the idea what should be done
+#
+
 __docformat__ = 'ReStructuredText'
 import ConfigParser
 import logging
 import optparse
 import subprocess
 import sys
-from keas.build import base, ssh
+from keas.build import base #, ssh
 
 logger = base.logger
 
