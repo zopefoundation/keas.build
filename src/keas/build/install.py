@@ -24,6 +24,7 @@ import pkg_resources
 import re
 import sys
 import urllib2
+import urlparse
 from keas.build import base
 
 logger = base.logger
@@ -139,11 +140,20 @@ class Installer(object):
                     print '  * ' + name
                 version = base.getInput('Version', versions[-1], False)
         # 4. Install the package
+        url = self.options.url
+
+        if self.options.username:
+            #add username and password if present so that buildout can access
+            #the URL without prompting
+            parts = urlparse.urlparse(url)
+            url = '%s://%s:%s@%s' % (parts[0], self.options.username,
+                                     self.options.password, ''.join(parts[1:]))
+
         base.do('%s -t %s -%sc %s%s/%s-%s-%s.cfg' %(
                 self.options.buildout,
                 self.options.timeout,
                 "vv" if self.options.verbose else "",
-                self.options.url,
+                url,
                 project,
                 project, variant, version),
                 captureOutput=False)

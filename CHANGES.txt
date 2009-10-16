@@ -4,6 +4,10 @@ CHANGES
 0.1.5 (unreleased)
 ------------------
 
+- Improvement: add username and password on install to the URL that buildout
+  gets for the .cfg file
+  Let's hope that buildout does not leave that password around.
+
 - Improvement(?) or fix: remove twisted dependency that was used in deploy
   for SSH
 
