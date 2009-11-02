@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.1.6 (unreleased)
+0.1.6 (2009-11-2)
 ------------------
 
 - Improvement: When determining released versions of a branch, support
