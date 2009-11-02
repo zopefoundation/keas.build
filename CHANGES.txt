@@ -4,7 +4,8 @@ CHANGES
 0.1.6 (unreleased)
 ------------------
 
-- ...
+- Improvement: When determining released versions of a branch, support
+  branch names ending with .x, as in MyProject-0.3.x
 
 0.1.5 (2009-10-16)
 ------------------

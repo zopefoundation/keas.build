@@ -145,7 +145,9 @@ class PackageBuilder(object):
         # filter versions by ones that came from the branch we are building from.
         if self.options.branch and '-' in self.options.branch:
             branchVersion = self.options.branch.split('-')[-1]
-            branchVersionParts = pkg_resources.parse_version(branchVersion)[:-1]
+            branchVersionParts = tuple([p for p in
+                                        pkg_resources.parse_version(branchVersion)
+                                        if not p.startswith('*')])
             def fromBranch(v):
                 versionParts = pkg_resources.parse_version(v)
                 return versionParts[:len(branchVersionParts)] == branchVersionParts
