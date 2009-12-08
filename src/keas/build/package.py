@@ -320,14 +320,25 @@ class PackageBuilder(object):
                 if ':' in pkg:
                     self.customPath = pkg.split(':')[1]
                 break
+
         # 2. Find all versions.
         versions = self.findVersions()
         logger.info('Existing %s versions: %s' % (
             self.pkg, ' | '.join(reversed(versions))))
+
         # 3. Determine the default version to suggest.
         defaultVersion = None
-        if versions:
-            # 3.1. If the branch was specified, check whether it changed since
+
+        # 3.1 Set default version based on forceVersion
+        forceVersion = self.options.forceVersion
+        if forceVersion:
+            if forceVersion in versions:
+                logger.error('Forced version %s already exists' % forceVersion)
+            else:
+                defaultVersion = forceVersion
+
+        if versions and not defaultVersion:
+            # 3.2. If the branch was specified, check whether it changed since
             # the last release.
             changed = False
             if self.options.branch:
@@ -338,7 +349,7 @@ class PackageBuilder(object):
                     logger.info("No changes detected.")
             else:
                 logger.info("Not checking for changes since version %s because no branch was specified.", versions[-1])
-            # 3.2. If the branch changed and the next version should be
+            # 3.3. If the branch changed and the next version should be
             # suggested, let's find the next version.
             if self.options.nextVersion and changed:
                 defaultVersion = base.guessNextVersion(versions[-1])

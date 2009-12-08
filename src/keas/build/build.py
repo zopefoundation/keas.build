@@ -125,6 +125,11 @@ def build(configFile, options):
         defaultVersion = projectVersions[-1]
     if options.nextVersion or configVersion == '+':
         defaultVersion = base.guessNextVersion(defaultVersion)
+    if options.forceVersion:
+        if options.forceVersion in projectVersions:
+            logger.error('Forced version %s already exists' % forceVersion)
+        else:
+            defaultVersion = forceVersion
     projectVersion = base.getInput(
         'Project Version', defaultVersion, options.useDefaults)
 

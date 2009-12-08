@@ -147,6 +147,11 @@ parser.add_option(
     help="When set, the system guesses the next version to generate.")
 
 parser.add_option(
+    "--force-version", action="store",
+    dest="forceVersion", default="", metavar="VERSION",
+    help="Force one common version through all packages and configs.")
+
+parser.add_option(
     "-b", "--use-branch", action="store",
     dest="branch", metavar="BRANCH", default=None,
     help="When specified, this branch will be always used.")
