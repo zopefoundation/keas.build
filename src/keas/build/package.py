@@ -207,7 +207,8 @@ class PackageBuilder(object):
 
         logger.info('Creating release tag')
         #TODO: destination folder might not exist... create it
-        base.do('svn cp -m "Create release tag" %s %s' %(branchUrl, tagUrl))
+        base.do('svn cp -m "Create release tag %s." %s %s' %(
+            version, branchUrl, tagUrl))
 
         # 2. Download tag
         buildDir = tempfile.mkdtemp()
@@ -226,7 +227,7 @@ class PackageBuilder(object):
             "version ?= ?'(.*)',", "version = '%s'," %version, setuppy)
         file(os.path.join(tagDir, 'setup.py'), 'w').write(setuppy)
         # 3.3. Check it all in
-        base.do('svn ci -m "Prepare for release." %s' %(tagDir))
+        base.do('svn ci -m "Prepare for release %s." %s' %(version, tagDir))
 
         # 4. Upload the distribution
         if self.uploadType == 'internal':
@@ -274,7 +275,8 @@ class PackageBuilder(object):
                     "version ?= ?'(.*)',", "version = '%s'," %newVersion, setuppy)
                 file(os.path.join(branchDir, 'setup.py'), 'w').write(setuppy)
                 # 5.4. Check in the changes.
-                base.do('svn ci -m "Update version number." %s' %(branchDir))
+                base.do('svn ci -m "Update version number to %s." %s' %(
+                    newVersion, branchDir))
 
         # 6. Cleanup
         rmtree(buildDir)
