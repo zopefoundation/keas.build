@@ -118,6 +118,7 @@ class PackageBuilder(object):
         if self.options.offline:
             logger.info('Offline: Skip looking for versions.')
             return []
+
         logger.debug('Package Index: ' + self.packageIndexUrl)
         req = urllib2.Request(self.packageIndexUrl)
 
@@ -128,17 +129,44 @@ class PackageBuilder(object):
             req.add_header("Authorization", "Basic %s" % base64string)
 
         soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
-        #TODO: handle real pypi index page!
-        #right now this supports only a flat list of all packages
 
         VERSION = re.compile(self.pkg+r'-(\d+\.\d+(\.\d+){0,2})')
+
+        simplePageUrl = None
 
         versions = []
         for tag in soup('a'):
             cntnt = str(tag.contents[0]) # str: re does not like non-strings
+
+            if cntnt == self.pkg:
+                try:
+                    simplePageUrl = tag['href']
+                except KeyError:
+                    pass
+
             m = VERSION.search(cntnt)
             if m:
                 versions.append(m.group(1))
+
+        if len(versions) == 0 and simplePageUrl:
+            #we probably hit a PYPI-like simple index
+            #reload the linked page, check again for versions
+            req = urllib2.Request(simplePageUrl)
+
+            if self.packageIndexUsername:
+                base64string = base64.encodestring(
+                    '%s:%s' % (self.packageIndexUsername,
+                               self.packageIndexPassword))[:-1]
+                req.add_header("Authorization", "Basic %s" % base64string)
+
+            soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(req).read())
+
+            for tag in soup('a'):
+                cntnt = str(tag.contents[0]) # str: re does not like non-strings
+
+                m = VERSION.search(cntnt)
+                if m:
+                    versions.append(m.group(1))
 
         logger.debug('All versions: ' + ' '.join(versions))
 

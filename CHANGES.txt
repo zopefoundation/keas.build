@@ -4,6 +4,8 @@ CHANGES
 0.1.7 (unreleased)
 ------------------
 
+- Improvement: PYPI-like simple index support when checking package versions
+
 - Improvement: Check dependent configs, upload all to the server.
 
 - Improvement: Add ``--force-version`` option.
