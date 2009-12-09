@@ -31,6 +31,8 @@ from keas.build import base, package
 
 logger = base.logger
 
+is_win32 = sys.platform == 'win32'
+
 def findProjectVersions(project, config, options, uploadType):
     if options.offline:
         logger.info('Offline: Skip looking for project versions.')
@@ -73,6 +75,67 @@ def findProjectVersions(project, config, options, uploadType):
 
     return sorted(versions, key=lambda x: pkg_resources.parse_version(x))
 
+def getDependentConfigFiles(filename, addSelf=True, outfile=None):
+    config = ConfigParser.RawConfigParser()
+    config.read(filename)
+
+    dependents = set()
+    if addSelf:
+        dependents.add(filename)
+
+    path = os.path.dirname(filename)
+
+    try:
+        extends = config.get('buildout', 'extends')
+    except ConfigParser.NoSectionError:
+        return dependents
+    except ConfigParser.NoOptionError:
+        return dependents
+
+    extendParts = extends.split()
+    hasPath = False
+    for part in extendParts:
+        if '/' in part or '\\' in part:
+            hasPath = True
+
+        # extends filenames are always relative to the actual file
+        fullname = os.path.join(path, part)
+
+        if is_win32:
+            #most buildouts use / but win32 uses \
+            fullname = fullname.replace('/', '\\')
+
+        if not os.path.exists(fullname):
+            logger.error("FATAL: %s not found, but is referenced by %s" % (
+                fullname, filename))
+            sys.exit(0)
+
+        dependents.update(getDependentConfigFiles(fullname))
+
+    if hasPath:
+        #we need to clean relative path from extends as on the server
+        #everything is flat
+        extendParts = [os.path.split(part)[-1] for part in extendParts]
+        extends = '\n  '.join(extendParts)
+
+        config.set('buildout', 'extends', extends)
+
+        if outfile:
+            #if the config is created by ourselves
+            config.write(open(outfile, 'w'))
+        else:
+            #this is a referenced config, don't modify the original
+            newname = os.path.split(filename)[-1]
+            config.write(open(newname, 'w'))
+
+            if addSelf:
+                #adjust dependents
+                dependents.remove(filename)
+                dependents.add(newname)
+
+    return dependents
+
+
 
 def build(configFile, options):
     # Read the configuration file.
@@ -83,10 +146,13 @@ def build(configFile, options):
     # Create the project config parser
     logger.info('Creating Project Configuration')
     projectParser = ConfigParser.RawConfigParser()
+    template_path = None
     if config.has_option(base.BUILD_SECTION, 'template'):
         template = config.get(base.BUILD_SECTION, 'template')
         logger.info('Loading Project Configuration Template: ' + template)
         projectParser.read([template])
+        template_path = os.path.abspath(template)
+
     if not projectParser.has_section('versions'):
         projectParser.add_section('versions')
 
@@ -139,6 +205,16 @@ def build(configFile, options):
 
     filesToUpload = [projectConfigFilename]
 
+    # Process config files, check for dependent config files
+    # we should make sure that they are on the server
+    # by design only the projectConfigFilename will have variable dependencies
+
+    if template_path:
+        dependencies = getDependentConfigFiles(template_path,
+                                               addSelf=False,
+                                               outfile=projectConfigFilename)
+        filesToUpload.extend(dependencies)
+
     # Create deployment configurations
     for section in config.sections():
         if section == base.BUILD_SECTION:
@@ -177,6 +253,9 @@ def build(configFile, options):
 
         filesToUpload.append(deployConfigFilename)
 
+    from pub.dbgpclient import brk; brk('192.168.32.1')
+
+
     # Upload the deployment files
     if uploadType == 'local':
         #no upload, just copy to destination
@@ -198,19 +277,22 @@ def build(configFile, options):
                     options.offline)
     elif uploadType == 'mypypi':
         if not options.offline and not options.noUpload:
-            url = (config.get(base.BUILD_SECTION, 'buildout-server')+
-                   '/'+projectName+'/upload')
+            server = config.get(base.BUILD_SECTION, 'buildout-server')
+            if not server.endswith('/'):
+                server += '/'
+            url = (server + projectName + '/upload')
             boundary = "--------------GHSKFJDLGDS7543FJKLFHRE75642756743254"
             headers={"Content-Type":
                 "multipart/form-data; boundary=%s; charset=utf-8" % boundary}
             for filename in filesToUpload:
+                justfname = os.path.split(filename)[-1]
                 #being lazy here with the construction of the multipart form data
                 content = """--%s
 Content-Disposition: form-data; name="content";filename="%s"
 
 %s
 --%s--
-""" % (boundary, filename, open(filename, 'r').read(), boundary)
+""" % (boundary, justfname, open(filename, 'r').read(), boundary)
 
                 base.uploadContent(
                     content, filename, url,

@@ -40,6 +40,9 @@ coherently.  Specifically, ``keas.build`` will:
 
 - Upload the buildout configuration files to a private configuration server.
 
+- Upload dependent buildout configuration files to a private configuration
+  server (by checking the extends= chain)
+
 Installation
 ============
 

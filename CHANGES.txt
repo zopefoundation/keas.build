@@ -4,6 +4,8 @@ CHANGES
 0.1.7 (unreleased)
 ------------------
 
+- Improvement: Check dependent configs, upload all to the server.
+
 - Improvement: Add ``--force-version`` option.
 
 - Improvement: Add version to svn log comment. That makes life easier (at least
