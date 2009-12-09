@@ -253,9 +253,6 @@ def build(configFile, options):
 
         filesToUpload.append(deployConfigFilename)
 
-    from pub.dbgpclient import brk; brk('192.168.32.1')
-
-
     # Upload the deployment files
     if uploadType == 'local':
         #no upload, just copy to destination
