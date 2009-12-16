@@ -46,6 +46,57 @@ def do(cmd, cwd=None, captureOutput=True):
     logger.debug('Output: \n%s' % stdout)
     return stdout
 
+class SVN(object):
+
+    svnuser = None
+    svnpass = None
+    svnForceAuth = False
+
+    #TODO: spaces in urls+folder names???
+
+    def __init__(self, svnuser=None, svnpass=None, svnForceAuth=False):
+        self.svnuser = svnuser
+        self.svnpass = svnpass
+        self.svnForceAuth = svnForceAuth
+
+    def _addAuth(self, command):
+        auth = ''
+        if self.svnuser:
+            auth = '--username %s --password %s' % (self.svnuser, self.svnpass)
+
+            if self.svnForceAuth:
+                auth += ' --no-auth-cache'
+
+        command = command.replace('%%auth%%', auth)
+        return command
+
+    def info(self, url):
+        command = 'svn info --non-interactive %%auth%% --xml %s' % url
+        command = self._addAuth(command)
+        return do(command)
+
+    def ls(self, url):
+        command = 'svn ls --non-interactive %%auth%% --xml %s' % url
+        command = self._addAuth(command)
+        return do(command)
+
+    def cp(self, fromurl, tourl, comment):
+        command = 'svn cp --non-interactive %%auth%% -m "%s" %s %s' %(
+            comment, fromurl, tourl)
+        command = self._addAuth(command)
+        do(command)
+
+    def co(self, url, folder):
+        command = 'svn co --non-interactive %%auth%% %s %s' % (url, folder)
+        command = self._addAuth(command)
+        do(command)
+
+    def ci(self, folder, comment):
+        command = 'svn ci --non-interactive %%auth%% -m "%s" %s' % (
+            comment, folder)
+        command = self._addAuth(command)
+        do(command)
+
 def getInput(prompt, default, useDefaults):
     if useDefaults:
         return default

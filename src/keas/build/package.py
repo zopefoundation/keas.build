@@ -64,10 +64,9 @@ class PackageBuilder(object):
     packageIndexPassword = None
 
     svnRepositoryUrl = None
-    svnRepositoryUsername = None
-    svnRepositoryPassword = None
 
     tagLayout = 'flat'
+    svn = None
 
     def __init__(self, pkg, options):
         self.pkg = pkg
@@ -104,7 +103,8 @@ class PackageBuilder(object):
         return branchUrl
 
     def getRevision(self, url):
-        xml = base.do('svn info --xml ' + url)
+        #xml = base.do('svn info --xml ' + url)
+        xml = self.svn.info(url)
         elem = ElementTree.fromstring(xml)
         revision = elem.find("entry").find("commit").get("revision")
         if not revision:
@@ -192,7 +192,8 @@ class PackageBuilder(object):
         url += 'branches'
         logger.debug('Branches URL: ' + url)
 
-        xml = base.do('svn ls --xml ' + url)
+        #xml = base.do('svn ls --xml ' + url)
+        xml = self.svn.ls(url)
         elem = ElementTree.fromstring(xml)
 
         branches = [elem.text for elem in elem.findall('./list/entry/name')]
@@ -235,13 +236,15 @@ class PackageBuilder(object):
 
         logger.info('Creating release tag')
         #TODO: destination folder might not exist... create it
-        base.do('svn cp -m "Create release tag %s." %s %s' %(
-            version, branchUrl, tagUrl))
+        self.svn.cp(branchUrl, tagUrl, "Create release tag %s." % version)
+        #base.do('svn cp -m "Create release tag %s." %s %s' %(
+        #    version, branchUrl, tagUrl))
 
         # 2. Download tag
         buildDir = tempfile.mkdtemp()
         tagDir = os.path.join(buildDir, '%s-%s' %(self.pkg, version))
-        base.do('svn co %s %s' %(tagUrl, tagDir))
+        self.svn.co(tagUrl, tagDir)
+        #base.do('svn co %s %s' %(tagUrl, tagDir))
 
         # 3. Create release
         # 3.1. Remove setup.cfg
@@ -255,7 +258,8 @@ class PackageBuilder(object):
             "version ?= ?'(.*)',", "version = '%s'," %version, setuppy)
         file(os.path.join(tagDir, 'setup.py'), 'w').write(setuppy)
         # 3.3. Check it all in
-        base.do('svn ci -m "Prepare for release %s." %s' %(version, tagDir))
+        self.svn.ci(tagDir, "Prepare for release %s." % version)
+        #base.do('svn ci -m "Prepare for release %s." %s' %(version, tagDir))
 
         # 4. Upload the distribution
         if self.uploadType == 'internal':
@@ -288,7 +292,8 @@ class PackageBuilder(object):
             logger.info("Updating branch version metadata")
             # 5.1. Check out the branch.
             branchDir = os.path.join(buildDir, 'branch')
-            base.do('svn co --non-recursive %s %s' %(branchUrl, branchDir))
+            self.svn.co(branchUrl, branchDir)
+            #base.do('svn co --non-recursive %s %s' %(branchUrl, branchDir))
             # 5.2. Get the current version.
             setuppy = file(os.path.join(branchDir, 'setup.py'), 'r').read()
             currVersion = re.search("version ?= ?'(.*)',", setuppy)
@@ -303,8 +308,9 @@ class PackageBuilder(object):
                     "version ?= ?'(.*)',", "version = '%s'," %newVersion, setuppy)
                 file(os.path.join(branchDir, 'setup.py'), 'w').write(setuppy)
                 # 5.4. Check in the changes.
-                base.do('svn ci -m "Update version number to %s." %s' %(
-                    newVersion, branchDir))
+                self.svn.ci(branchDir, "Update version number to %s." % newVersion)
+                #base.do('svn ci -m "Update version number to %s." %s' %(
+                #    newVersion, branchDir))
 
         # 6. Cleanup
         rmtree(buildDir)
@@ -325,10 +331,14 @@ class PackageBuilder(object):
         # 1.2. Get svn repository info.
         self.svnRepositoryUrl = config.get(
             base.BUILD_SECTION, 'svn-repos')
-        self.svnRepositoryUsername = config.get(
+
+        svnRepositoryUsername = config.get(
             base.BUILD_SECTION, 'svn-repos-username')
-        self.svnRepositoryPassword = config.get(
+        svnRepositoryPassword = config.get(
             base.BUILD_SECTION, 'svn-repos-password')
+
+        #self.svn = base.SVN(svnRepositoryUsername, svnRepositoryPassword)
+        self.svn = base.SVN()
 
         try:
             self.uploadType = config.get(
