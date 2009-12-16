@@ -67,32 +67,32 @@ class SVN(object):
             if self.svnForceAuth:
                 auth += ' --no-auth-cache'
 
-        command = command.replace('%%auth%%', auth)
+        command = command.replace('##__auth__##', auth)
         return command
 
     def info(self, url):
-        command = 'svn info --non-interactive %%auth%% --xml %s' % url
+        command = 'svn info --non-interactive ##__auth__## --xml %s' % url
         command = self._addAuth(command)
         return do(command)
 
     def ls(self, url):
-        command = 'svn ls --non-interactive %%auth%% --xml %s' % url
+        command = 'svn ls --non-interactive ##__auth__## --xml %s' % url
         command = self._addAuth(command)
         return do(command)
 
     def cp(self, fromurl, tourl, comment):
-        command = 'svn cp --non-interactive %%auth%% -m "%s" %s %s' %(
+        command = 'svn cp --non-interactive ##__auth__## -m "%s" %s %s' %(
             comment, fromurl, tourl)
         command = self._addAuth(command)
         do(command)
 
     def co(self, url, folder):
-        command = 'svn co --non-interactive %%auth%% %s %s' % (url, folder)
+        command = 'svn co --non-interactive ##__auth__## %s %s' % (url, folder)
         command = self._addAuth(command)
         do(command)
 
     def ci(self, folder, comment):
-        command = 'svn ci --non-interactive %%auth%% -m "%s" %s' % (
+        command = 'svn ci --non-interactive ##__auth__## -m "%s" %s' % (
             comment, folder)
         command = self._addAuth(command)
         do(command)
