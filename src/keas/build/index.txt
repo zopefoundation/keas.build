@@ -235,6 +235,9 @@ Let's go over each of the settings in the ``build`` section of
   source code lives, including release tags.
 
 - **svn-repos-username** - The username for the url repository.
+  Use the command line option ``--force-svnauth`` to force all svn operations
+  to use this credential.
+  Otherwise cached authentication will be used.
 
 - **svn-repos-password** - The password for the url repository.
 

@@ -13,6 +13,8 @@ CHANGES
 - Improvement: Add version to svn log comment. That makes life easier (at least
   with TortoiseSVN)
 
+- Improvement: Add ``--force-svnauth`` option.
+
 0.1.6 (2009-11-2)
 ------------------
 
