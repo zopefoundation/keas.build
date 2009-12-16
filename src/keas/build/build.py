@@ -163,7 +163,8 @@ def build(configFile, options):
         if ':' in pkg:
             pkg, customPath = pkg.split(':')
         builder = package.PackageBuilder(pkg, options)
-        version = builder.runCLI(configFile, True)
+        version = builder.runCLI(configFile, askToCreateRelease=True,
+                                 forceSvnAuth = options.forceSvnAuth)
         pkgversions[pkg] = version
         projectParser.set('versions', pkg, version)
 
