@@ -62,7 +62,7 @@ class SVN(object):
     def _addAuth(self, command):
         auth = ''
         if self.user:
-            auth = '--username %s --passwdword %s' % (self.user, self.passwd)
+            auth = '--username %s --password %s' % (self.user, self.passwd)
 
             if self.forceAuth:
                 auth += ' --no-auth-cache'
