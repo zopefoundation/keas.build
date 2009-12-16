@@ -315,7 +315,7 @@ class PackageBuilder(object):
         # 6. Cleanup
         rmtree(buildDir)
 
-    def runCLI(self, configFile, askToCreateRelease=False):
+    def runCLI(self, configFile, askToCreateRelease=False, forceSvnAuth=False):
         logger.info('Start releasing new version of ' + self.pkg)
         # 1. Read the configuration file.
         logger.info('Loading configuration file: ' + configFile)
@@ -332,13 +332,16 @@ class PackageBuilder(object):
         self.svnRepositoryUrl = config.get(
             base.BUILD_SECTION, 'svn-repos')
 
-        svnRepositoryUsername = config.get(
-            base.BUILD_SECTION, 'svn-repos-username')
-        svnRepositoryPassword = config.get(
-            base.BUILD_SECTION, 'svn-repos-password')
+        if forceSvnAuth:
+            svnRepositoryUsername = config.get(
+                base.BUILD_SECTION, 'svn-repos-username')
+            svnRepositoryPassword = config.get(
+                base.BUILD_SECTION, 'svn-repos-password')
 
-        #self.svn = base.SVN(svnRepositoryUsername, svnRepositoryPassword)
-        self.svn = base.SVN()
+            self.svn = base.SVN(svnRepositoryUsername, svnRepositoryPassword,
+                                forceAuth=True)
+        else:
+            self.svn = base.SVN()
 
         try:
             self.uploadType = config.get(
@@ -452,7 +455,8 @@ def main(args=None):
         print "Usage: build-package [options] package1 package2 ..."
         sys.exit(0)
     for pkg in args:
-        builder = PackageBuilder(pkg, options)
+        builder = PackageBuilder(pkg, options,
+                                 forceSvnAuth = options.forceSvnAuth)
         try:
             builder.runCLI(options.configFile)
         except KeyboardInterrupt:

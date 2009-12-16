@@ -48,23 +48,23 @@ def do(cmd, cwd=None, captureOutput=True):
 
 class SVN(object):
 
-    svnuser = None
-    svnpass = None
-    svnForceAuth = False
+    user = None
+    passwd = None
+    forceAuth = False
 
     #TODO: spaces in urls+folder names???
 
-    def __init__(self, svnuser=None, svnpass=None, svnForceAuth=False):
-        self.svnuser = svnuser
-        self.svnpass = svnpass
-        self.svnForceAuth = svnForceAuth
+    def __init__(self, user=None, passwd=None, forceAuth=False):
+        self.user = user
+        self.passwd = passwd
+        self.forceAuth = forceAuth
 
     def _addAuth(self, command):
         auth = ''
-        if self.svnuser:
-            auth = '--username %s --password %s' % (self.svnuser, self.svnpass)
+        if self.user:
+            auth = '--username %s --passwdword %s' % (self.user, self.passwd)
 
-            if self.svnForceAuth:
+            if self.forceAuth:
                 auth += ' --no-auth-cache'
 
         command = command.replace('##__auth__##', auth)
@@ -201,6 +201,11 @@ parser.add_option(
     "--force-version", action="store",
     dest="forceVersion", default="", metavar="VERSION",
     help="Force one common version through all packages and configs.")
+
+parser.add_option(
+    "--force-svnauth", action="store_true",
+    dest="forceSvnAuth", default=False,
+    help="Force svn authentication with svn-repos- credentials.")
 
 parser.add_option(
     "-b", "--use-branch", action="store",
