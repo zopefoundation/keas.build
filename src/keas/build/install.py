@@ -122,7 +122,8 @@ class Installer(object):
             for name in variants:
                 print '  * ' + name
             if not variants:
-                logger.error("No variants found, this script only works with variants.")
+                logger.error(
+                    "No variants found, this script only works with variants.")
                 sys.exit(0)
             variant = base.getInput('Variant', variants[0], False)
         # 3. Get the version of the project.
@@ -149,13 +150,20 @@ class Installer(object):
             url = '%s://%s:%s@%s' % (parts[0], self.options.username,
                                      self.options.password, ''.join(parts[1:]))
 
-        base.do('%s -t %s -%sc %s%s/%s-%s-%s.cfg' %(
+        options = []
+        if self.options.verbose:
+            options.append('-vv')
+
+        if self.options.overrideDir:
+            options.append('buildout:directory=%s' % self.options.overrideDir)
+
+        cfgFile = '%s%s/%s-%s-%s.cfg' % (url, project, project, variant, version)
+
+        base.do('%s -t %s %s -c %s' %(
                 self.options.buildout,
                 self.options.timeout,
-                "vv" if self.options.verbose else "",
-                url,
-                project,
-                project, variant, version),
+                ' '.join(options),
+                cfgFile),
                 captureOutput=False)
 
 parser = optparse.OptionParser()
@@ -178,6 +186,11 @@ parser.add_option(
     "-v", "--version", action="store",
     dest="version", metavar="VERSION",
     help="The version of the project to be installed.")
+
+parser.add_option(
+    "--directory", action="store",
+    dest="overrideDir", metavar="FOLDER", default=None,
+    help="Override installation target folder")
 
 parser.add_option(
     "-l", "--latest", action="store_true",

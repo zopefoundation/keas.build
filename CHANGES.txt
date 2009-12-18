@@ -15,6 +15,8 @@ CHANGES
 
 - Improvement: Add ``--force-svnauth`` option.
 
+- Improvement: Add ``--directory`` option to ``install``.
+
 0.1.6 (2009-11-2)
 ------------------
 
