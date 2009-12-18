@@ -29,6 +29,8 @@ from keas.build import base
 
 logger = base.logger
 
+is_win32 = sys.platform == 'win32'
+
 class Installer(object):
 
     def __init__(self, options):
@@ -155,7 +157,19 @@ class Installer(object):
             options.append('-vv')
 
         if self.options.overrideDir:
-            options.append('buildout:directory=%s' % self.options.overrideDir)
+            overrideDir = self.options.overrideDir
+            #make it absolute if it's not
+            #buildout does not like relative, buildbot cannot do absolute
+            if is_win32:
+                isAbs = overrideDir[0].lower().isalpha() and overrideDir[1]==':'
+                if not isAbs:
+                    overrideDir = os.path.abspath(overrideDir)
+            else:
+                isAbs = overrideDir.startswith('/')
+                if not isAbs:
+                    overrideDir = os.path.abspath(overrideDir)
+
+            options.append('buildout:directory=%s' % overrideDir)
 
         cfgFile = '%s%s/%s-%s-%s.cfg' % (url, project, project, variant, version)
 
