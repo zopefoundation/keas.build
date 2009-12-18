@@ -25,6 +25,7 @@ import re
 import sys
 import urllib2
 import urlparse
+import os.path
 from keas.build import base
 
 logger = base.logger
