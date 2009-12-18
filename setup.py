@@ -49,6 +49,11 @@ setup(
     include_package_data = True,
     package_dir = {'': 'src'},
     namespace_packages = ['keas'],
+    extras_require = dict(
+      test = [
+          'zope.testing',
+          ],
+    ),
     install_requires=[
         'BeautifulSoup',
         'setuptools',
