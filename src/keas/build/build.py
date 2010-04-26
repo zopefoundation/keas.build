@@ -75,15 +75,23 @@ def findProjectVersions(project, config, options, uploadType):
 
     return sorted(versions, key=lambda x: pkg_resources.parse_version(x))
 
-def getDependentConfigFiles(filename, addSelf=True, outfile=None):
+def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None):
+    # go and read all cfg files that are required by the master
+    # to collect them all
+    # if they have a path, modify according to that the the files are flat
+    # on the server
+
+    # baseFolder and infile might be "out of sync", because
+    # we process cfg files that are already modified compared to the templates
+    # in that case we want to read/write the modified file, but look for
+    # the others in the template_path
+
     config = ConfigParser.RawConfigParser()
-    config.read(filename)
+    config.read(infile)
 
     dependents = set()
     if addSelf:
-        dependents.add(filename)
-
-    path = os.path.dirname(filename)
+        dependents.add(infile)
 
     try:
         extends = config.get('buildout', 'extends')
@@ -99,7 +107,7 @@ def getDependentConfigFiles(filename, addSelf=True, outfile=None):
             hasPath = True
 
         # extends filenames are always relative to the actual file
-        fullname = os.path.join(path, part)
+        fullname = os.path.join(baseFolder, part)
 
         if is_win32:
             #most buildouts use / but win32 uses \
@@ -107,10 +115,11 @@ def getDependentConfigFiles(filename, addSelf=True, outfile=None):
 
         if not os.path.exists(fullname):
             logger.error("FATAL: %s not found, but is referenced by %s" % (
-                fullname, filename))
+                fullname, infile))
             sys.exit(0)
 
-        dependents.update(getDependentConfigFiles(fullname))
+        dependents.update(getDependentConfigFiles(os.path.dirname(fullname),
+                                                  fullname))
 
     if hasPath:
         #we need to clean relative path from extends as on the server
@@ -125,12 +134,12 @@ def getDependentConfigFiles(filename, addSelf=True, outfile=None):
             config.write(open(outfile, 'w'))
         else:
             #this is a referenced config, don't modify the original
-            newname = os.path.split(filename)[-1]
+            newname = os.path.split(infile)[-1]
             config.write(open(newname, 'w'))
 
             if addSelf:
                 #adjust dependents
-                dependents.remove(filename)
+                dependents.remove(infile)
                 dependents.add(newname)
 
     return dependents
@@ -163,11 +172,14 @@ def build(configFile, options):
         if ':' in pkg:
             pkg, customPath = pkg.split(':')
         builder = package.PackageBuilder(pkg, options)
+
         version = builder.runCLI(configFile, askToCreateRelease=True,
                                  forceSvnAuth = options.forceSvnAuth)
+
         pkgversions[pkg] = version
         projectParser.set('versions', pkg, version)
 
+    # Get upload type
     try:
         uploadType = config.get(base.BUILD_SECTION, 'buildout-upload-type')
     except ConfigParser.NoOptionError:
@@ -188,6 +200,8 @@ def build(configFile, options):
     defaultVersion = configVersion = config.get(base.BUILD_SECTION, 'version')
     projectVersions = findProjectVersions(projectName, config,
                                           options, uploadType)
+
+    # Determine new project version
     if projectVersions:
         defaultVersion = projectVersions[-1]
     if options.nextVersion or configVersion == '+':
@@ -200,6 +214,7 @@ def build(configFile, options):
     projectVersion = base.getInput(
         'Project Version', defaultVersion, options.useDefaults)
 
+    # Write out the new project config -- the pinned versions
     projectConfigFilename = '%s-%s.cfg' %(projectName, projectVersion)
     logger.info('Writing project configuration file: ' + projectConfigFilename)
     projectParser.write(open(projectConfigFilename, 'w'))
@@ -209,9 +224,9 @@ def build(configFile, options):
     # Process config files, check for dependent config files
     # we should make sure that they are on the server
     # by design only the projectConfigFilename will have variable dependencies
-
     if template_path:
-        dependencies = getDependentConfigFiles(template_path,
+        dependencies = getDependentConfigFiles(os.path.dirname(template_path),
+                                               projectConfigFilename,
                                                addSelf=False,
                                                outfile=projectConfigFilename)
         filesToUpload.extend(dependencies)
@@ -254,7 +269,7 @@ def build(configFile, options):
 
         filesToUpload.append(deployConfigFilename)
 
-    # Upload the deployment files
+    # Upload the files
     if uploadType == 'local':
         #no upload, just copy to destination
         dest = os.path.join(config.get(base.BUILD_SECTION, 'buildout-server'),

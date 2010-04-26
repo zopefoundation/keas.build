@@ -4,6 +4,9 @@ CHANGES
 0.1.7 (unreleased)
 ------------------
 
+- BUGFIX: the dependent config file gathering killed the version pins
+  in the master config file
+
 - Improvement: PYPI-like simple index support when checking package versions
 
 - Improvement: Check dependent configs, upload all to the server.
