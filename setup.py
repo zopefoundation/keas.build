@@ -23,7 +23,7 @@ def read(*rnames):
 
 setup(
     name='keas.build',
-    version = '0.1.7',
+    version = '0.1.8dev',
     author = "Stephan Richter and the Zope Community",
     author_email = "zope-dev@zope.org",
     description='A Build System',
