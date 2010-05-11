@@ -4,7 +4,11 @@ CHANGES
 0.1.8 (unreleased)
 ------------------
 
-- ...
+- Fix: Do NOT ``register`` with ``python setup.py``
+
+- Fix: bump setuptools and zc.buildout versions
+
+- Fix: 0.1.7 tar.gz was broken
 
 0.1.7 (2010-04-26)
 ------------------

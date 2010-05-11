@@ -283,7 +283,8 @@ class PackageBuilder(object):
         elif self.uploadType == 'setup.py':
             # 3.4. Create distribution and upload in one step
             logger.info("Uploading release to PyPI.")
-            base.do('python setup.py sdist register upload', cwd = tagDir)
+            # definitely DO NOT register!!!
+            base.do('python setup.py sdist upload', cwd = tagDir)
         else:
             logger.warn('Unknown uploadType: ' + self.uploadType)
 
