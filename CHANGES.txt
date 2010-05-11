@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.1.8 (unreleased)
+0.1.8 (2010-05-11)
 ------------------
 
 - Fix: Do NOT ``register`` with ``python setup.py``
