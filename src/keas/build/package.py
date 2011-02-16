@@ -408,6 +408,7 @@ class PackageBuilder(object):
                 defaultVersion = base.guessNextVersion(versions[-1])
             else:
                 defaultVersion = versions[-1]
+        branch = self.options.branch
         while True:
             version = base.getInput(
                 'Version for `%s`' %self.pkg, defaultVersion,
@@ -424,7 +425,6 @@ class PackageBuilder(object):
                 if not self.options.offline:
                     # 4.1. Determine the branch from which to base the release
                     # on.
-                    branch = self.options.branch
                     if branch is None:
                         print 'Available Branches:'
                         for branch in self.getBranches():
@@ -440,6 +440,8 @@ class PackageBuilder(object):
         logger.info('Chosen version: ' + version)
 
         # save the info for build.py
+        if branch is None:
+            branch = 'trunk'
         self.branchUrl = self.getBranchURL(branch)
         self.branchRevision = self.getRevision(self.branchUrl)
 
