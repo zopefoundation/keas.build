@@ -219,22 +219,7 @@ def build(configFile, options):
     # Write out the new project config -- the pinned versions
     projectConfigFilename = '%s-%s.cfg' %(projectName, projectVersion)
     logger.info('Writing project configuration file: ' + projectConfigFilename)
-    projectFile = open(projectConfigFilename, 'w')
-    projectParser.write(projectFile)
-
-    # Dump package repo infos
-    projectFile.write('\n')
-    projectFile.write('# package SVN infos:\n')
-    for pkg, pkginfo in pkginfos.items():
-        projectFile.writelines(
-            ('# %s\n' % pkg,
-             '#   svn URL:%s\n' % pkginfo[0],
-             '#   svn repo revision:%s\n' % pkginfo[1][0],
-             '#   svn last change revision:%s\n' % pkginfo[1][1],
-            ))
-        logger.info('SVN info: %s: %s %s %s', pkg, pkginfo[0],
-                    pkginfo[1][0], pkginfo[1][1])
-    projectFile.close()
+    projectParser.write(open(projectConfigFilename, 'w'))
 
     filesToUpload = [projectConfigFilename]
 
@@ -247,6 +232,23 @@ def build(configFile, options):
                                                addSelf=False,
                                                outfile=projectConfigFilename)
         filesToUpload.extend(dependencies)
+
+    # Dump package repo infos
+    # do it here, projectConfigFilename might be rewritten by
+    # getDependentConfigFiles
+    projectFile = open(projectConfigFilename, 'a')
+    projectFile.write('\n')
+    projectFile.write('# package SVN infos:\n')
+    for pkg, pkginfo in pkginfos.items():
+        projectFile.writelines(
+            ('# %s\n' % pkg,
+             '#   svn URL:%s\n' % pkginfo[0],
+             '#   svn repo revision:%s\n' % pkginfo[1][0],
+             '#   svn last change revision:%s\n' % pkginfo[1][1],
+            ))
+        logger.info('SVN info: %s: %s %s %s', pkg, pkginfo[0],
+                    pkginfo[1][0], pkginfo[1][1])
+    projectFile.close()
 
     # Create deployment configurations
     for section in config.sections():
