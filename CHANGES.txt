@@ -4,7 +4,7 @@ CHANGES
 0.1.9 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Bump versions to ZTK 1.1
 
 
 0.1.8 (2010-05-11)
