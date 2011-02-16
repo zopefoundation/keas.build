@@ -68,6 +68,10 @@ class PackageBuilder(object):
     tagLayout = 'flat'
     svn = None
 
+    #filled by runCLI, as an info for build.py
+    branchUrl = None
+    branchRevision = None
+
     def __init__(self, pkg, options):
         self.pkg = pkg
         self.options = options
@@ -112,7 +116,14 @@ class PackageBuilder(object):
         else:
             revision = int(revision)
         logger.debug('Revision for %s: %i' %(url, revision))
-        return revision
+
+        repoRevision = elem.find("entry").get("revision")
+        if not repoRevision:
+            repoRevision = 0
+        else:
+            repoRevision = int(repoRevision)
+            logger.debug('Repo Revision for %s: %i' %(url, repoRevision))
+        return (repoRevision, revision)
 
     def findVersions(self):
         if self.options.offline:
@@ -216,7 +227,7 @@ class PackageBuilder(object):
         # source directory instead.
         branchUrl = self.getBranchURL(branch) + '/src'
         tagUrl = self.getTagURL(version)
-        changed = self.getRevision(branchUrl) > self.getRevision(tagUrl)
+        changed = self.getRevision(branchUrl)[1] > self.getRevision(tagUrl)[1]
         if changed:
             logger.info(
                 'Branch %r changed since the release of version %s' %(
@@ -427,6 +438,11 @@ class PackageBuilder(object):
             break
         # 5. Return the version number.
         logger.info('Chosen version: ' + version)
+
+        # save the info for build.py
+        self.branchUrl = self.getBranchURL(branch)
+        self.branchRevision = self.getRevision(self.branchUrl)
+
         return version
 
 

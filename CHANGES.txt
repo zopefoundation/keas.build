@@ -6,6 +6,9 @@ CHANGES
 
 - Bump versions to ZTK 1.1
 
+- Improvement: add SVN repo infos to the project config file.
+  Yah, I know this can be checked anytime, but adding this saves a lot of time.
+
 
 0.1.8 (2010-05-11)
 ------------------

@@ -167,6 +167,7 @@ def build(configFile, options):
 
     # Determine all versions of the important packages
     pkgversions = {}
+    pkginfos = {}
     for pkg in config.get(base.BUILD_SECTION, 'packages').split():
         customPath = None
         if ':' in pkg:
@@ -177,6 +178,7 @@ def build(configFile, options):
                                  forceSvnAuth = options.forceSvnAuth)
 
         pkgversions[pkg] = version
+        pkginfos[pkg] = (builder.branchUrl, builder.branchRevision)
         projectParser.set('versions', pkg, version)
 
     # Get upload type
@@ -217,7 +219,20 @@ def build(configFile, options):
     # Write out the new project config -- the pinned versions
     projectConfigFilename = '%s-%s.cfg' %(projectName, projectVersion)
     logger.info('Writing project configuration file: ' + projectConfigFilename)
-    projectParser.write(open(projectConfigFilename, 'w'))
+    projectFile = open(projectConfigFilename, 'w')
+    projectParser.write(projectFile)
+
+    # Dump package repo infos
+    projectFile.write('\n')
+    projectFile.write('# package SVN infos:\n')
+    for pkg, pkginfo in pkginfos.items():
+        projectFile.writelines(
+            ('# %s\n' % pkg,
+             '#   svn URL:%s\n' % pkginfo[0],
+             '#   svn repo revision:%s\n' % pkginfo[1][0],
+             '#   svn last change revision:%s\n' % pkginfo[1][1],
+            ))
+    projectFile.close()
 
     filesToUpload = [projectConfigFilename]
 
