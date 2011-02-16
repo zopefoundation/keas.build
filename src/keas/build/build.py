@@ -232,6 +232,8 @@ def build(configFile, options):
              '#   svn repo revision:%s\n' % pkginfo[1][0],
              '#   svn last change revision:%s\n' % pkginfo[1][1],
             ))
+        logger.info('SVN info: %s: %s %s %s', pkg, pkginfo[0],
+                    pkginfo[1][0], pkginfo[1][1])
     projectFile.close()
 
     filesToUpload = [projectConfigFilename]
