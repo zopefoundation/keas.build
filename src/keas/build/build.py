@@ -21,6 +21,7 @@ import ConfigParser
 import StringIO
 import base64
 import logging
+import md5
 import pkg_resources
 import re
 import sys
@@ -75,7 +76,8 @@ def findProjectVersions(project, config, options, uploadType):
 
     return sorted(versions, key=lambda x: pkg_resources.parse_version(x))
 
-def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None):
+def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None,
+                            hashes=None):
     # go and read all cfg files that are required by the master
     # to collect them all
     # if they have a path, modify according to that the the files are flat
@@ -85,6 +87,12 @@ def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None):
     # we process cfg files that are already modified compared to the templates
     # in that case we want to read/write the modified file, but look for
     # the others in the template_path
+
+    if hashes is not None:
+        justname = os.path.split(infile)[-1]
+        if justname not in hashes:
+            hash = md5.new(open(infile, 'rb').read()).hexdigest()
+            hashes[justname] = hash
 
     config = ConfigParser.RawConfigParser()
     config.read(infile)
@@ -119,7 +127,7 @@ def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None):
             sys.exit(0)
 
         dependents.update(getDependentConfigFiles(os.path.dirname(fullname),
-                                                  fullname))
+                                                  fullname, hashes=hashes))
 
     if hasPath:
         #we need to clean relative path from extends as on the server
@@ -144,7 +152,51 @@ def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None):
 
     return dependents
 
+def addHashes(dependencies, hashes):
+    # add hashes to files
 
+    rdep = []
+    for fname in dependencies:
+        modified = False
+        justname = os.path.split(fname)[-1]
+
+        config = ConfigParser.RawConfigParser()
+        config.read(fname)
+
+        try:
+            # 1. modify file contents
+            extends = config.get('buildout', 'extends')
+            for oldname, hash in hashes.items():
+                parts = os.path.splitext(oldname)
+                newname = "%s-%s%s" % (parts[0], hash, parts[1])
+
+                if oldname in extends:
+                    extends.replace(oldname, newname)
+                    modified = True
+
+            if modified:
+                config.set('buildout', 'extends', extends)
+        except ConfigParser.NoSectionError:
+            pass
+        except ConfigParser.NoOptionError:
+            pass
+
+        # 2. rename/copy files
+        try:
+            hash = hashes[justname]
+            parts = os.path.splitext(justname)
+            newname = "%s-%s%s" % (parts[0], hash, parts[1])
+            modified = True
+        except KeyError:
+            newname = justname
+
+        if modified:
+            config.write(open(newname, 'w'))
+            rdep.append(newname)
+        else:
+            rdep.append(fname)
+
+    return rdep
 
 def build(configFile, options):
     # Read the configuration file.
@@ -223,14 +275,31 @@ def build(configFile, options):
 
     filesToUpload = [projectConfigFilename]
 
+        # Get upload type
+    try:
+        hashConfigFiles = config.getboolean(base.BUILD_SECTION,
+                                            'hash-config-files')
+    except ConfigParser.NoOptionError:
+        hashConfigFiles = False
+
     # Process config files, check for dependent config files
     # we should make sure that they are on the server
     # by design only the projectConfigFilename will have variable dependencies
     if template_path:
+        if hashConfigFiles:
+            hashes = {}
+        else:
+            hashes = None
+
         dependencies = getDependentConfigFiles(os.path.dirname(template_path),
                                                projectConfigFilename,
                                                addSelf=False,
-                                               outfile=projectConfigFilename)
+                                               outfile=projectConfigFilename,
+                                               hashes=hashes)
+
+        if hashConfigFiles:
+            dependencies = addHashes(dependencies, hashes)
+
         filesToUpload.extend(dependencies)
 
     # Dump package repo infos
