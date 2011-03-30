@@ -152,7 +152,7 @@ def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None,
 
     return dependents
 
-def addHashes(dependencies, hashes):
+def addHashes(dependencies, hashes, rename=True):
     # add hashes to files
 
     rdep = []
@@ -182,13 +182,15 @@ def addHashes(dependencies, hashes):
             pass
 
         # 2. rename/copy files
-        try:
-            hash = hashes[justname]
-            parts = os.path.splitext(justname)
-            newname = "%s-%s%s" % (parts[0], hash, parts[1])
-            modified = True
-        except KeyError:
-            newname = justname
+        newname = justname
+        if rename:
+            try:
+                hash = hashes[justname]
+                parts = os.path.splitext(justname)
+                newname = "%s-%s%s" % (parts[0], hash, parts[1])
+                modified = True
+            except KeyError:
+                pass
 
         if modified:
             config.write(open(newname, 'w'))
@@ -299,6 +301,8 @@ def build(configFile, options):
 
         if hashConfigFiles:
             dependencies = addHashes(dependencies, hashes)
+            #fix main config too
+            addHashes([projectConfigFilename], hashes, rename=False)
 
         filesToUpload.extend(dependencies)
 
