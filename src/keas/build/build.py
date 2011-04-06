@@ -171,7 +171,7 @@ def addHashes(dependencies, hashes, rename=True):
                 newname = "%s-%s%s" % (parts[0], hash, parts[1])
 
                 if oldname in extends:
-                    extends.replace(oldname, newname)
+                    extends = extends.replace(oldname, newname)
                     modified = True
 
             if modified:
