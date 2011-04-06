@@ -241,6 +241,9 @@ Let's go over each of the settings in the ``build`` section of
 
 - **svn-repos-password** - The password for the url repository.
 
+- **hash-config-files** - Add hashes based on file content to dependent config
+  filenames.
+
 - **packages** - a list of packages that are part of the project.
   These are the packages that live in the svn repository and that
   should be released in conjunction with each other.
