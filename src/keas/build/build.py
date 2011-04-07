@@ -94,7 +94,7 @@ def getDependentConfigFiles(baseFolder, infile, addSelf=True, outfile=None,
             hash = md5.new(open(infile, 'rb').read()).hexdigest()
             hashes[justname] = hash
 
-    config = ConfigParser.RawConfigParser()
+    config = base.NonDestructiveRawConfigParser()
     config.read(infile)
 
     dependents = set()
@@ -160,7 +160,7 @@ def addHashes(dependencies, hashes, rename=True):
         modified = False
         justname = os.path.split(fname)[-1]
 
-        config = ConfigParser.RawConfigParser()
+        config = base.NonDestructiveRawConfigParser()
         config.read(fname)
 
         try:
@@ -193,6 +193,8 @@ def addHashes(dependencies, hashes, rename=True):
                 pass
 
         if modified:
+            #RawConfigParser fools us... next time it does I'll do
+            #plain replace on the file contents
             config.write(open(newname, 'w'))
             rdep.append(newname)
         else:
@@ -203,12 +205,12 @@ def addHashes(dependencies, hashes, rename=True):
 def build(configFile, options):
     # Read the configuration file.
     logger.info('Loading configuration file: ' + configFile)
-    config = ConfigParser.RawConfigParser()
+    config = base.NonDestructiveRawConfigParser()
     config.read(configFile)
 
     # Create the project config parser
     logger.info('Creating Project Configuration')
-    projectParser = ConfigParser.RawConfigParser()
+    projectParser = base.NonDestructiveRawConfigParser()
     template_path = None
     if config.has_option(base.BUILD_SECTION, 'template'):
         template = config.get(base.BUILD_SECTION, 'template')
@@ -352,7 +354,7 @@ def build(configFile, options):
             sys.exit(0)
         deployConfigFilename = '%s-%s-%s.cfg' %(
             config.get(base.BUILD_SECTION, 'name'), section, projectVersion)
-        deployConfig = ConfigParser.RawConfigParser()
+        deployConfig = base.NonDestructiveRawConfigParser()
         deployConfig.readfp(StringIO.StringIO(deployConfigText))
         deployConfig.set('buildout', 'extends', projectConfigFilename)
         logger.info('Writing deployment file: ' + deployConfigFilename)

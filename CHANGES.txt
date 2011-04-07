@@ -4,7 +4,8 @@ CHANGES
 0.2.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix RawConfigParser usage, it destroys options values by making them
+  all lowercase.
 
 
 0.2.0 (2011-04-06)
