@@ -16,6 +16,7 @@
 $Id$
 """
 __docformat__ = 'ReStructuredText'
+import datetime
 import BeautifulSoup
 import ConfigParser
 import StringIO
@@ -203,6 +204,9 @@ def addHashes(dependencies, hashes, rename=True):
     return rdep
 
 def build(configFile, options):
+    # save the time we started
+    now = datetime.datetime.now()
+
     # Read the configuration file.
     logger.info('Loading configuration file: ' + configFile)
     config = base.NonDestructiveRawConfigParser()
@@ -338,6 +342,11 @@ def build(configFile, options):
         vars['project-name'] = projectName
         vars['project-version'] = projectVersion
         vars['instance-name'] = section
+
+        #add current time
+        vars['current-datetime'] = now.isoformat()
+        vars['current-date'] = now.date().isoformat()
+        vars['current-time'] = now.time().isoformat()
 
         #handle multi-line items, ConfigParser removes leading spaces
         #we need to add some back otherwise it will be a parsing error
