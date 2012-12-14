@@ -324,6 +324,11 @@ parser.add_option(
     help="When specified, this branch will be always used.")
 
 parser.add_option(
+    "-i", "--independent-branches", action="store_true",
+    dest="independent", metavar="INDEPENDENT", default=False,
+    help="When specified, the system makes sure the last release is based on the given branch.")
+
+parser.add_option(
     "--no-upload", action="store_true",
     dest="noUpload", default=False,
     help="When set, the generated configuration files are not uploaded.")

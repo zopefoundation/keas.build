@@ -4,7 +4,17 @@ CHANGES
 0.2.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- feature: added -i --independent-branches option. This option will force
+  to check if the last release was made from the same branch we are
+  releasing from. This is required if you develop a new software generation
+  in a branch which is independent from the trunk. Previous version of
+  keas.build where only able to handle branch releases as bug fix releases
+  and didn't make sure that we don't mix trunk and branch releases. Now with
+  the -i option we force that all released packages will be made or reused
+  based on the current trunk or branch (-b trunk)
+
+- added more logging infos for find or skip next version which makes is simpler
+  to see what's going on
 
 
 0.2.2 (2011-08-29)
