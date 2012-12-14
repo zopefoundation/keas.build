@@ -240,7 +240,10 @@ class PackageBuilder(object):
         # check if the dev marked version in setup.py from the given branch
         # compares with our version we will guess. If so, this means no
         # other branch was used for release this package.
-        pyURL = '%ssetup.py' % self.getBranchURL(branch)
+        branchURL = self.getBranchURL(branch)
+        if branchURL.endswith('/'):
+            branchURL = branchURL[:-1]
+        pyURL = '%s/setup.py' % branchURL
         req = urllib2.Request(pyURL)
         if self.packageIndexUsername:
             base64string = base64.encodestring(
@@ -357,6 +360,9 @@ class PackageBuilder(object):
         rmtree(buildDir)
 
     def runCLI(self, configFile, askToCreateRelease=False, forceSvnAuth=False):
+        logger.info('-' * 79)
+        logger.info(self.pkg)
+        logger.info('-' * 79)
         logger.info('Start releasing new version of ' + self.pkg)
         # 1. Read the configuration file.
         logger.info('Loading configuration file: ' + configFile)
