@@ -87,6 +87,8 @@ installations)::
     -n, --next-version    When set, the system guesses the next version to generate.
     -b BRANCH, --use-branch=BRANCH
                           When specified, this branch will be always used.
+    -i BRANCHES --independent-branches=BRANCH1 BRANCH2,
+                          When specified, the system guesses the next version from all this branches.
     --no-upload           When set, the generated configuration files are not uploaded.
     --no-branch-update    When set, the branch is not updated with a new version after a release is created.
 
