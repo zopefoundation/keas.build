@@ -222,9 +222,11 @@ class PackageBuilder(object):
         return branches
 
     def hasChangedSince(self, version, branch):
-        # setup.py gets changed on the branch after the tag is created, so
-        # that the branch always has a later revision. So let's check the
-        # source directory instead.
+        # check if svn revision gets changed on the branch after the tag
+        # was created, so that the branch always has a later revision. Note
+        # that our last release was updating the version in setup.py which also
+        # forces a change after adding the tag. So let's check the source
+        # directory instead.
         branchUrl = self.getBranchURL(branch) + '/src'
         tagUrl = self.getTagURL(version)
         changed = self.getRevision(branchUrl)[1] > self.getRevision(tagUrl)[1]
@@ -233,6 +235,36 @@ class PackageBuilder(object):
                 'Branch %r changed since the release of version %s' %(
                 branch, version))
         return changed
+
+    def isLastReleaseFromBranch(self, version, branch):
+        # check if the dev marked version in setup.py from the given branch
+        # compares with our version we will guess. If so, this means no
+        # other branch was used for release this package.
+        branchURL = self.getBranchURL(branch)
+        if branchURL.endswith('/'):
+            branchURL = branchURL[:-1]
+        pyURL = '%s/setup.py' % branchURL
+        req = urllib2.Request(pyURL)
+        if self.packageIndexUsername:
+            base64string = base64.encodestring(
+                '%s:%s' % (self.packageIndexUsername,
+                           self.packageIndexPassword))[:-1]
+            req.add_header("Authorization", "Basic %s" % base64string)
+        setuppy = urllib2.urlopen(req).read()
+        nextVersion = re.search("version ?= ?'(.*)',", setuppy)
+        if not nextVersion:
+            logger.error("No version =  found in setup.py, cannot update!")
+            # prevent mess up, force ensure new release
+            return False
+        else:
+            nextVersion = nextVersion.groups()[0]
+            setupVersion = '%sdev' % base.guessNextVersion(version)
+            if setupVersion == nextVersion:
+                return True
+            else:
+                logger.info("Last release %s wasn't released from branch %r " % (
+                    version, branch))
+                return False
 
     def createRelease(self, version, branch):
         logger.info('Creating release %r for %r from branch %r' %(
@@ -299,7 +331,7 @@ class PackageBuilder(object):
         else:
             logger.warn('Unknown uploadType: ' + self.uploadType)
 
-        # 5. Update the start branch to the next devel version
+        # 5. Update the start branch to the next development (dev) version
         if not self.options.noBranchUpdate:
             logger.info("Updating branch version metadata")
             # 5.1. Check out the branch.
@@ -328,6 +360,9 @@ class PackageBuilder(object):
         rmtree(buildDir)
 
     def runCLI(self, configFile, askToCreateRelease=False, forceSvnAuth=False):
+        logger.info('-' * 79)
+        logger.info(self.pkg)
+        logger.info('-' * 79)
         logger.info('Start releasing new version of ' + self.pkg)
         # 1. Read the configuration file.
         logger.info('Loading configuration file: ' + configFile)
@@ -391,23 +426,44 @@ class PackageBuilder(object):
                 defaultVersion = forceVersion
 
         if versions and not defaultVersion:
-            # 3.2. If the branch was specified, check whether it changed since
-            # the last release.
-            changed = False
-            if self.options.branch:
-                logger.info('Checking for changes since version %s; please wait...', versions[-1])
-                changed = self.hasChangedSince(
-                    versions[-1], self.options.branch)
-                if not changed:
-                    logger.info("No changes detected.")
+            if self.options.nextVersion:
+                # 3.2. If the branch was specified, check whether it changed
+                # since the last release or if independent is set, if the last
+                # release is based on the current branch
+                changed = False
+                if self.options.branch:
+                    logger.info("Checking for changes since version %s; please "
+                                "wait...", versions[-1])
+                    changed = self.hasChangedSince(versions[-1],
+                        self.options.branch)
+                    if self.options.independent and not changed:
+                        # only check if not already marked as changed
+                        logger.info("Checking if last release is based on "
+                                    "branch %s; please wait...",
+                                    self.options.branch)
+                        if not self.isLastReleaseFromBranch(versions[-1],
+                            self.options.branch):
+                            changed = True
+                    if not changed:
+                        logger.info("No changes detected.")
+                else:
+                    logger.info("Not checking for changes since version %s "
+                                "because no -b or --use-branch was specified.",
+                                versions[-1])
+                # 3.3. If the branch changed and the next version should be
+                # suggested, let's find the next version.
+                if changed:
+                    defaultVersion = base.guessNextVersion(versions[-1])
+                else:
+                    defaultVersion = versions[-1]
             else:
-                logger.info("Not checking for changes since version %s because no branch was specified.", versions[-1])
-            # 3.3. If the branch changed and the next version should be
-            # suggested, let's find the next version.
-            if self.options.nextVersion and changed:
-                defaultVersion = base.guessNextVersion(versions[-1])
-            else:
+                logger.info("Not checking for changes because -n or "
+                            "--next-version was not used")
                 defaultVersion = versions[-1]
+        else:
+            logger.info(
+                "Not checking for changes because --force-version was used")
+            
         branch = self.options.branch
         while True:
             version = base.getInput(
