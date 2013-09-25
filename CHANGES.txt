@@ -4,7 +4,8 @@ CHANGES
 0.3.1 (unreleased)
 ------------------
 
-- ...
+- Improvement: added `default-package-version` command line option
+  to avoid interactive questions on new packages
 
 
 0.3.0 (2012-12-27)

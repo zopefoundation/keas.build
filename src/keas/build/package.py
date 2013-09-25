@@ -463,7 +463,12 @@ class PackageBuilder(object):
         else:
             logger.info(
                 "Not checking for changes because --force-version was used")
-            
+
+        # If there's no version the package is probably non existent
+        if defaultVersion is None and self.options.defaultPackageVersion:
+            # avoid interactive questions (handy for automated builds)
+            defaultVersion = self.options.defaultPackageVersion
+
         branch = self.options.branch
         while True:
             version = base.getInput(

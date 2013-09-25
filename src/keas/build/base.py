@@ -314,6 +314,11 @@ parser.add_option(
     help="Force one common version through all packages and configs.")
 
 parser.add_option(
+    "--default-package-version", action="store",
+    dest="defaultPackageVersion", default="", metavar="VERSION",
+    help="Set a default package version for not yet released ones.")
+
+parser.add_option(
     "--force-svnauth", action="store_true",
     dest="forceSvnAuth", default=False,
     help="Force svn authentication with svn-repos- credentials.")
@@ -326,7 +331,8 @@ parser.add_option(
 parser.add_option(
     "-i", "--independent-branches", action="store_true",
     dest="independent", metavar="INDEPENDENT", default=False,
-    help="When specified, the system makes sure the last release is based on the given branch.")
+    help=("When specified, the system makes sure the last release is based "
+         "on the given branch."))
 
 parser.add_option(
     "--no-upload", action="store_true",
