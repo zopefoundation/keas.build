@@ -255,7 +255,10 @@ Defining a Release Template
 
 As we saw in the previous section, *Twollo.cfg* refers to a file
 called *Twollo-Release-Template.cfg*.  This is just a base buildout
-configuration.  For the Twollo project, it might look like this::
+configuration.  Additional to this, we can also define different configuration
+data as define in stage and production section. Such sections can get used in
+a product deployment as additional (shared) variables.  For the Twollo project,
+it might look like this::
 
   # Twollo-Release-Template.cfg
 
@@ -280,6 +283,13 @@ configuration.  For the Twollo project, it might look like this::
   [zope3]
   location =
 
+  [stage]
+  memcached = 127.0.0.1:11211
+
+  [production]
+  memcached = 10.0.0.1:11211
+
+
 When a new release of the Twollo project is made, a ``[versions]``
 section will be added to this configuration file with all the
 correct ``twollow.*`` versions pinned down.
@@ -302,6 +312,7 @@ addtional sections to the *Twollo.cfg* file::
 
   [Development]
   template = Twollo-Instance-Template.cfg
+  vars = stage
   port = 9080
   logdir = /opt/twollo/dev/logs
   install-dir = /opt/twollo/dev
@@ -310,6 +321,7 @@ addtional sections to the *Twollo.cfg* file::
 
   [QA]
   template = Twollo-Instance-Template.cfg
+  vars = stage
   port = 9082
   logdir = /opt/twollo/qa/logs
   install-dir = /opt/twollo/qa
@@ -318,6 +330,7 @@ addtional sections to the *Twollo.cfg* file::
 
   [Production]
   template = Twollo-Instance-Template.cfg
+  vars = production
   port = 8080
   logdir = /var/log/twollo
   install-dir = /opt/twollo/
@@ -341,6 +354,10 @@ set in *Twollo.cfg*.  For the Twollo project, it might look like this::
   recipe = zc.zope3recipes:instance
   application = twollo-app
   zope.conf =
+
+    <product-config memcached>
+      memcached %(memcached)s
+    </product-config>
 
     <zodb>
       cache-size %(cache-size)s
@@ -368,6 +385,13 @@ set in *Twollo.cfg*.  For the Twollo project, it might look like this::
         path %(logdir)s/twollo-access.log
       </logfile>
     </accesslog>
+
+As you can see, the Twollo.cfg uses additional vars (stage, production) which
+makes it very simple to define a lagrge amount of shared attributes in a
+release template and use them in the instance template. Note, a side effect
+from the python config parser is, that you will inherit arguments define in a
+duplicated section define in an template loaded via (buildout) extends.
+
 
 Releasing a Project
 -------------------

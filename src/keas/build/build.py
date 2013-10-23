@@ -329,6 +329,12 @@ def build(configFile, options):
     projectFile.close()
 
     # Create deployment configurations
+    # first define a parser for load addition variable (vars) section somewhere
+    # in your templates chain.
+    varsParser = base.NonDestructiveRawConfigParser()
+    # make sure we use the right (tempalte inheritation) order
+    varsParser.read(reversed(filesToUpload))
+
     for section in config.sections():
         if section == base.BUILD_SECTION:
             continue
@@ -339,11 +345,25 @@ def build(configFile, options):
         vars = dict([(name, value)
                      for name, value in config.items(section)
                      if name != 'template'])
+
+        # apply additional vars defined in release template section if a
+        # section name is defined as vars argument
+        # or keep the vars argument as is if there is no section. This is
+        # usefull if someone uses the vars attribute as argument (BBB)
+        vName = vars.get('vars')
+        if varsParser.has_section(vName):
+            # apply vars from given section as additional vars
+            for name, value in varsParser.items(vName):
+                if name not in vars:
+                    # but only if not overriden in deployment config
+                    vars[name] = value
+
+        # apply defaults
         vars['project-name'] = projectName
         vars['project-version'] = projectVersion
         vars['instance-name'] = section
 
-        #add current time
+        # add current time
         vars['current-datetime'] = now.isoformat()
         vars['current-date'] = now.date().isoformat()
         vars['current-time'] = now.time().isoformat()

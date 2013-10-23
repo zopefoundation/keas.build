@@ -1,10 +1,23 @@
 CHANGES
 =======
 
-0.3.1 (unreleased)
+0.4.0 (unreleased)
 ------------------
 
-- ...
+- feature: implemented a new argument `vars` in deployment template section. The
+  new `vars` argument can get used for define a release template section. If 
+  defined, the build process will apply all arguments from this section as they
+  would be a a part of the project section. This allows to inherit a large
+  amount of arguments in a project definition instead of define them in
+  each project. This is usefull if you have a stage and many production variants
+  and the instance uses config data like a database setup and you need to
+  share them. For such a usecase you can simply define a stage and production
+  section and define all shared arguments and use the right `vars` section in
+  your product deployment setup. See the memcached sample in index.txt
+
+  Note, this new product deployment template `vars` argument could be a problem
+  for your existing setup if you use a vars argument with a value similar then
+  a section name defined in your section template.
 
 
 0.3.0 (2012-12-27)
