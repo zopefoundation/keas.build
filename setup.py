@@ -22,8 +22,8 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 setup(
-    name='keas.build',
-    version='0.4.0',
+    name='keas.build',,
+    version='0.4.0dev',
     author = "Stephan Richter and the Zope Community",
     author_email = "zope-dev@zope.org",
     description='A Build System',

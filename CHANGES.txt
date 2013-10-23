@@ -20,6 +20,13 @@ CHANGES
   a section name defined in your section template.
 
 
+0.3.1 (2013-09-25)
+------------------
+
+- Improvement: added `default-package-version` command line option
+  to avoid interactive questions on new packages
+
+
 0.3.0 (2012-12-27)
 ------------------
 
