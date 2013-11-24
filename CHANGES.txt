@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.4.0 (unreleased)
+0.4.0 (2013-11-24)
 ------------------
 
 - feature: implemented a new argument `vars` in deployment template section. The
