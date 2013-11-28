@@ -1,10 +1,12 @@
 CHANGES
 =======
 
-0.4.1 (unreleased)
+0.4.1 (2013-11-28)
 ------------------
 
-- ...
+- bugfix: prevent generating bad buildout option key/value seperators. Generate
+  `+=` instead of `+ =` used for e.g. buildout parts options. Otherwise it
+  fails since buildout 2.0
 
 
 0.4.0 (2013-11-24)

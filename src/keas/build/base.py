@@ -276,6 +276,38 @@ class NonDestructiveRawConfigParser(ConfigParser.RawConfigParser):
     def optionxform(self, optionstr):
         return optionstr
 
+    def write(self, fp):
+        """Write an .ini-format representation of the configuration state.
+        
+        Enhanced support for buildout specfic "+=" key/value options e.g.
+        [buildout]
+        extends = foo-parts.cfg
+        parts += foo
+
+        Previous version generated parts + = foo. But this now fails since
+        buildout >= 2.0
+
+        """
+        if self._defaults:
+            fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
+            for (key, value) in self._defaults.items():
+                fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+            fp.write("\n")
+        for section in self._sections:
+            fp.write("[%s]\n" % section)
+            for (key, value) in self._sections[section].items():
+                if key == "__name__":
+                    continue
+                if (value is not None) or (self._optcre == self.OPTCRE):
+                    # NOTE: this supports parts += ... and prevents to split
+                    # the += into "+ =" which would fail later using zc.buildout
+                    if key.endswith(' +') or key.endswith(' -'):
+                        key = "= ".join((key, str(value).replace('\n', '\n\t')))
+                    else:
+                        key = " = ".join((key, str(value).replace('\n', '\n\t')))
+                fp.write("%s\n" % (key))
+            fp.write("\n")
+
 
 parser = optparse.OptionParser()
 parser.add_option(
