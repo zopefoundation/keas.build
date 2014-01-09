@@ -270,14 +270,14 @@ def build(configFile, options):
         defaultVersion = base.guessNextVersion(defaultVersion)
     if options.forceVersion:
         if options.forceVersion in projectVersions:
-            logger.error('Forced version %s already exists' % forceVersion)
+            logger.error('Forced version %s already exists' % options.forceVersion)
         else:
-            defaultVersion = forceVersion
+            defaultVersion = options.forceVersion
     projectVersion = base.getInput(
         'Project Version', defaultVersion, options.useDefaults)
 
     # Write out the new project config -- the pinned versions
-    projectConfigFilename = '%s-%s.cfg' %(projectName, projectVersion)
+    projectConfigFilename = '%s-%s.cfg' % (projectName, projectVersion)
     logger.info('Writing project configuration file: ' + projectConfigFilename)
     projectParser.write(open(projectConfigFilename, 'w'))
 
